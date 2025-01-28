@@ -14,3 +14,5 @@ def contact(request):
 
 def show_task(request):
     return HttpResponse("This is our task")
+def show_specific_task(request,id):
+    return HttpResponse(f'This is our task no. {id}')
