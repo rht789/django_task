@@ -1,15 +1,26 @@
 {% load static %}
+
 <!DOCTYPE html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Document</title>
     <link rel="stylesheet" href="{% static "css/output.css" %}">
-</head>
-<body>
+  </head>
+  <body>
     <div>
-        <h1 class="bg-yellow-400">Test Page</h1>
+      
+        {% for name in names %}
+          {% if not name == 'Karim' %}
+            <p class="p-5 bg-red-500">{{name}}</p>
+          {% endif %}
+        {% endfor %}
+      {% with a=10 %}
+      <div>value of a: {{a}}</div>
+      {% endwith %}
+        {{ count }}
+      <h1 class="text-yellow-400">Test Page</h1>
     </div>
-</body>
+  </body>
 </html>
