@@ -24,4 +24,6 @@ def test(request):
     }
     return render(request,'test.html', context)
 
+def forms(request):
+    return render(request,'task_form.html')
 
