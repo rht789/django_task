@@ -6,12 +6,9 @@
     <title>Task Form</title>
 </head>
 <body>
-    <form action="" method="POST">
+    <form action="" method="GET">
         {% csrf_token %}
-        <label for="title">Title</label>
-        <input type="text" name="title" id="title">
-        <label for="number">Number</label>
-        <input type="number" name="number" id="number">
+        {{form.as_p}}
         <button type="submit">Submit</button>
     </form>
 </body>
