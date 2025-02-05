@@ -1,6 +1,6 @@
 from django.shortcuts import render
 from django.http import HttpResponse
-from tasks.forms import TaskForm
+from tasks.forms import TaskForm,TaskModelForm
 from tasks.models import *
 
 # Create your views here.
@@ -27,38 +27,29 @@ def test(request):
     return render(request,'test.html', context)
 
 def create_task(request):
-    employees = Employee.objects.all()
-    
-    form = TaskForm(employees=employees)
+    form = TaskModelForm()
     if request.method == "POST":
-        form = TaskForm(request.POST, employees=employees)
+        form = TaskModelForm(request.POST)
         if form.is_valid():
-            data = form.cleaned_data
-            title = data.get('title')
-            description = data.get('description')
-            due_date = data.get('due_date')
-            assigned_to = data.get('assigned_to')
-            task = Task.objects.create(title=title,description=description,due_date=due_date)
+            """For Django model Form"""
+            # form.save()
+            # return HttpResponse("Task Created Succesfully")
+            return render(request, 'task_form.html', {'form':form, 'message':'task created successsfully'})
+
             
-            for emp_id in assigned_to:
-                employee = Employee.objects.get(id=emp_id)
-                task.assigned_to.add(employee)
-            return HttpResponse("Task Created Succesfully")
-    # if request.method == "POST":
-    #     form = TaskForm(request.POST,employees=employees)
-    #     if form.is_valid():
-    #         data = form.cleaned_data
-    #         title = data.get("title")
-    #         description = data.get("description")
-    #         due_date = data.get("due_date")
-    #         assigned_to = data.get("assigned_to")
-            
-    #         task = Task.objects.create(title=title,description=description,due_date=due_date)
-            
-    #         for emp_id in assigned_to:
-    #             emp = Employee.objects.get(id=emp_id)
-    #             task.assigned_to.add(emp)
-    #         return HttpResponse("Task Created Successfully")
+    
+            """For Django Form Data"""
+            #         data = form.cleaned_data
+            #         title = data.get('title')
+            #         description = data.get('description')
+            #         due_date = data.get('due_date')
+            #         assigned_to = data.get('assigned_to')
+            #         task = Task.objects.create(title=title,description=description,due_date=due_date)
+                    
+            #         for emp_id in assigned_to:
+            #             employee = Employee.objects.get(id=emp_id)
+            #             task.assigned_to.add(employee)
+                    
     context = {
         "form" : form
     }

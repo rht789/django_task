@@ -6,6 +6,11 @@
     <title>Task Form</title>
 </head>
 <body>
+    <div>
+        {% if message %}
+            <p>{{message}}</p>
+        {% endif %}
+    </div>
     <form action="" method="POST">
         {% csrf_token %}
         {{form.as_p}}
