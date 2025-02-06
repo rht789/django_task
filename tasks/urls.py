@@ -6,5 +6,6 @@ urlpatterns = [
     path('dashboard/', manager_dashboard),
     path('user_dashboard/', user_dashboard),
     path('test/', test),
-    path('forms/', create_task) 
+    path('forms/', create_task),
+    path('view_tasks/', view_task)
 ]
