@@ -35,7 +35,7 @@ class StyledFormMixin:
             elif isinstance(field.widget, forms.SelectDateWidget):
                 print("Inside Date")
                 field.widget.attrs.update({
-                    "class": "border-2 border-gray-300 p-3 rounded-lg shadow-sm focus:outline-none focus:border-rose-500 focus:ring-rose-500"
+                    "class": "border-2 border-gray-300 bg-gray-300 p-3 rounded-lg shadow-sm focus:outline-none focus:border-rose-500 focus:ring-rose-500"
                 })
             elif isinstance(field.widget, forms.CheckboxSelectMultiple):
                 print("Inside checkbox")
@@ -54,6 +54,10 @@ class TaskModelForm(StyledFormMixin,forms.ModelForm):
         model = Task
         # fields = '__all__'
         fields = ['title', 'description', 'due_date', 'assigned_to']
+        widgets = {
+            'due_date': forms.SelectDateWidget,
+            'assigned_to': forms.CheckboxSelectMultiple
+        }
         # exclude = ['project', 'is_completed', 'created_at','updated_at']
         # widgets = {
         #     'title': forms.TextInput(attrs={
