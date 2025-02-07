@@ -1,0 +1,85 @@
+5.3
+To connect PostgreSQL with our Django project we need to do some adjustment in our settings.p y, we write DATABASES = {
+    'default': {
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': 'task_management',
+        'USER': 'postgres',
+        'PASSWORD': '1234',
+        'HOST': 'localhost',
+        'PORT': '5432'
+    }
+}
+
+here everything will be same except name and password, as it will be how we set it in the database
+
+5.4
+
+SO we create database tables in models.py, here we declare the datatypes from Django models field https://docs.djangoproject.com/en/5.1/ref/models/fields/#field-types
+
+now for each column we define the data types after that we make migration by python 'manage.py makemigrations', as PostgreSQL knows only SQL so we convert the class of models.py into sql formate by migrations so in migrations folder it will create a file that is necessary for convertion (if there is no migrations folder then folder will be automatically created by the makemigraton command)
+now writing 'python manage.py migrate' it will convert it and create a table in database
+now in postgre t creates tthe table's name as appname_classname, suppose our app name was tasks and the table name in models.py was task so the table will be created as tasks.task
+
+5.5
+in models we can wrte dropdown choices by passing a tuples or list in charfield, class TaskDetail(models.Model):
+    HIGH = 'H'
+    MEDIUM = 'M'
+    LOW = 'L'
+    PRIORITY_OPTIONS = (
+        (HIGH , 'High'),
+        (MEDIUM, 'Medium'),
+        (LOW, 'Low')
+    )
+    
+    assigned_to = models.CharField(max_length=100)
+    priority = models.CharField(
+        max_length=1,choices=PRIORITY_OPTIONS,default=LOW
+    )
+
+so declaring this with variables ensure if we ever change anything then we don't have to do the change in everywhere
+then comes one to one relation "task = models.OneToOneField(Task, on_delete=models.CASCADE)" here we have to always remember that we will write relation only on the dependent table or we say child table, it goes for all relation, now here on_delete tells us what will happen if we delete parent tables, there some values we can werite as CASCADE
+PROTECT
+RESTRICT
+SET_NULL
+SET_DEFAULT
+SET()
+DO_NOTHING
+
+each has its uses, Task referes to the parent table and OneToOneField is one to one relationship
+
+5.6
+Django shell is To interact with the database using Python commands, we must be in venv and type python manage.py shell to enter in Django shell, now here we can create object in 2 way first one is t = Task(title = "Low Priority Task",description = "asdfgh", due_date = "2025-02-07") here we direct ly write the data and then t.save() to save it in database another one is t = Task.objects.create(title = "High Priority Task",description = "asdfghjkl", due_date = "2025-02-08")   here it will directly create and save the object in data base,
+to view and see a object we write task = Task.objects.get(id=1) here it wil show a task with id 1
+as we have taskdetail model we can create it in same way but as we are taking a foreign key constraint from Task model we would need a currently saved task for that we have already saved a  task in a variable (not sure what its called) by get method so we would simply put that here how we have done it t = TaskDetail.objects.create(task = task, assigned_to = "me", priority = "L") , also when we try to create it with same thing we will get error as duplicacy is not allowed
+now Task.object.create is a Django query equivalent of create query in SQL same for get which is equivalent to select query, this thing is called ORM = Object relation mapaper
+
+5.7
+we created a new model named Project whch is class Project(models.Model):
+    name  = models.CharField(max_length=100)
+    start_date = models.DateField()
+it is demonstrate many to one relation, so a project can have many tasks hence we will add the constraint in Taask table, now we have too keep in mind that dependant model must be declared after parent table so in this case Project should be above Task model but we can also fix it by putting table name in double quotation like this ("Project", on_delete=models.CASCADE)
+    title = models.CharField(max_length=250)
+here we write ForeignKey for many to one relationship,
+
+now when we try to migrate it will show an error bcz Task has already some data previously now wer are adding a new field name project without writing any default and also it is non-nullable, two way we can fix it is writing null and blank as true so existing value will be set to null, but project is an object and is import for relation declaration hence the 2nd option first create the Project table then migrate then create some data of project table and  add the constraint after that and migrate again
+after creating a data in project table we need to know the id we can get it by >>> project = Project.objects.all()
+>>> project.first()
+<Project: Project object (1)>
+>>> project.first().id
+1
+here first indicating that we are selecting first object
+
+5.8
+So here we will demonstrate many to many relationship between Employee and Tasks 
+class Employee:
+    name = models.CharField(max_length=100)
+    email = models.EmailField(unique=True)
+and the manytomany relationship in tasks table assigned_to = models.ManyToManyField(Employee) 
+after migrating it will create a composit table consisting the employee id and tasks id, and Django automatically creates it
+
+now in shell to find te employyes assigned to a task we write task.assigned_to.all()
+
+
+5.9 Now here we will learn reverse relationship and related name, from a child we can easly get the info of a parent model, how about vice versa? well on that case we would get a hidden feild on that parent folder in database the fieldname is set as child's model name, it happes in one to one relation like in our case Task has one to one relation with TaskDetail so the field will be taskdetail, now we can get the info by "Task.objects.get(id=1).taskdetail" so for first task we will get the details,, now we can change the feild name too, simpy in foreign constraint we will add related_name = 'our field name' 
+now for many to many to same method instead by default now with model name it will be save as _set, for example between task and employee if we want to see which employee has which tasks then the field will be "Employee.objects.get(id=1).task_set.all()", now here we can also set custom feild name by previously mentioned, here after setting custom fieldname  set will not be attached with the new field name, 
+show manytoOne relation reverse relationship example with Project and task

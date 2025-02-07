@@ -1,0 +1,45 @@
+4.1
+template can be created  in 2 way: 
+1. in base folder create a folder named templates and in settings.py in TEMPLATES --> DIRS write [BASE_DIR / 'templates]
+2. create the templates in specific app, so that it will be organized here you don't have to write anything in settings py
+
+4.2
+template inheritance, so in Django html can be inherited from a ase html file, assume you have a base html with all the main tags but you have written a  separated html file with different section, to get the man tags on that newly created file, these new templates extend the base templates or override specific sections or bocks as needed, so in base template where we want to extend we write {% block content %}
+        <!-- Default content can go here if you want. -->
+        {% endblock %}
+and on the new file where the section has been made at the very top write {% extends 'base.html path' %}
+and same block code with end bock but in between the main code of that fie will be there {% block content %}
+<h2>Welcome to the Home Page!</h2>
+<p>This content is specific to the home page.</p>
+{% endblock %}
+
+also what if we wants template to appear in everywhere then we just write {% include('that template path') %} in base template
+
+4.3
+Static filles are that do not change in response to a user’s actions or requests.
+as template it can be created in 2way, one in base directory, and in settings.py we need to write STATIC_URL = '/static/' and 
+STATICFILES_DIRS = [
+    BASE_DIR / 'static'
+]
+
+2nd way is creating in the specific app folder,it is suggested for long projects,
+now in template files we need to write load to use those static file in our template, same link tag in src attribute we will write <link rel="stylesheet" href="{% static 'static file path' %}"> same for script tag 
+ 
+ 4.4
+after tailwind configuration there are two ways we can use that, first one is 'npm run buld:tailwind' which idk, and another is 'npm run watch:tailwind' it will directly build your css and will apply the css at the same time
+
+4.5 
+Context is a dictionary that sent from views to template , the template uses this data to dnamicaly render content to the user, in template it can be display as {{key value}}
+
+!!!!Important!!! django template tags can't be formatted to go into next line!
+
+4.6
+for loop, if statement works same as normal code, by with tag you can declare a variable, here are how you write it : {% with count=0 %}
+        {% for name in names %}
+          {% if not name == 'Karim' %}
+            <p class="p-5 bg-red-500">{{name}}</p>
+          {% endif %} 
+          {{ count|add:1 }}
+        {% endfor %}
+        {{ count }}
+      {% endwith %}

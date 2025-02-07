@@ -1,0 +1,211 @@
+6.1
+
+get method is usually used when data is not that confidential
+pist method is used for confidentiality
+csrf token ensures data is doesn't sent to server in plain text
+
+6.2
+in Django we have built in forms feature so instead of using html forms we can use Django forms, soo for ths in our desired application we create forms.py and we write all field and input data in a class, best practice for the class name is to write down the appname with first letter being capitalization with forms being camel case for example : from django import forms
+
+class TaskForm(forms.Form):
+    title = forms.CharField(max_length=250)
+    description = forms.CharField()
+
+in views we import this forms file send it to the html as a context and use it in a htl under {{}}, example:
+def create_task(request):
+    form = TaskForm()
+    context = {
+        "form" : form
+    }
+    return render(request,'task_form.html', context)
+
+and in html :  <form action="" method="POST">
+        {% csrf_token %}
+        {{form.as_p}}
+        <button type="submit">Submit</button>
+    </form>
+now whata about dynamic field that shows field data from database,feld like assigned_to requires data from employee table, so we write this in forms.py from django import forms
+# from tasks.models import *
+
+class TaskForm(forms.Form):
+    title = forms.CharField(max_length=250, label="Task Title")
+    description = forms.CharField(widget=forms.Textarea, label='Task Description')
+    due_date = forms.DateField(widget=forms.SelectDateWidget)
+    assigned_to = forms.MultipleChoiceField(widget=forms.CheckboxSelectMultiple)
+    
+    def __init__(self, *args, **kwargs):
+        print(args,kwargs)
+        employees = kwargs.pop("employees",[])
+        super().__init__(*args,**kwargs)
+        self.fields['assigned_to'].choices = [
+            (emp.id,emp.name) for emp in employees
+        ]
+
+and we pass employee data from views.py 
+def create_task(request):
+    employees = Employee.objects.all()
+    form = TaskForm(employees=employees)
+    context = {
+        "form" : form
+    }
+    return render(request,'task_form.html', context)
+now in forms.py we needed to inherit the Form class to
+ use the mrthod like fields or as_p() , we did this by writing super().init(*args,**kwargs)
+
+6.3
+Now to add the data from the form to database directly we need to get those data from html to database for that in views we would use the ORM we used in Django shell so that it becomes easy, in the code 
+def create_task(request):
+    employees = Employee.objects.all()
+    
+    form = TaskForm(employees=employees)
+    if request.method == "POST":
+        form = TaskForm(request.POST, employees=employees)
+        if form.is_valid():
+            data = form.cleaned_data
+            title = data.get('title')
+            description = data.get('description')
+            due_date = data.get('due_date')
+            assigned_to = data.get('assigned_to')
+            task = Task.objects.create(title=title,description=description,due_date=due_date)
+            
+            for emp_id in assigned_to:
+                employee = Employee.objects.get(id=emp_id)
+                task.assigned_to.add(employee)
+            return HttpResponse("Task Created Succesfully")
+
+
+here as we will use post method to send our data in backend so we need to create a form variable to store all the response when a user click submit button, so all the data will be cleaned up as without clean up it all will be in html format, then we will fetch all field info and since we have asiigned to composite table bcz of Task and Employees many to many relation ship, we would need task id and employee id so for each employee in asiigned to field we would add them to the composite table,
+
+6.4
+Django Form has some limitation as we need to write the field name again in form as we already have written in model, makng it redundant
+simply we would write the class name to TaskModelForm for understanding now in the parenthesis we will inherit from  forms.ModelForm, now on second line whenever we use Model Form we must need to use Class Meta: exactly this way, so meta class allows you to customize how the form interacts with the associated model,
+then we have to write model, meaning which model we are following for the forms and then fields if we want all fields then fields = '__all__' or fields = ['title', 'description', 'due_date', 'assigned_to'], now when we render we would notice the employee name is shown as object format like Employee object (1), so we will use dunder method def __str__(self):
+        return self.name
+now what if we have 2 to 30 fields will we use all the fields name? then aswer is no instead we will use exclude = ['fieldName'] for example : exclude = ['project', 'is_completed', 'created_at','updated_at']
+also we could use widgets for due_date and assigned_to for formatting now in view.py we have updated the action after submitting the form, if request.method == "POST":
+        form = TaskModelForm(request.POST)
+        if form.is_valid():
+            """For Django model Form"""
+            # form.save()
+            # return HttpResponse("Task Created Succesfully")
+            return render(request, 'task_form.html', {'form':form, 'message':'task created successsfully'})
+here we would show the success message with  the form and message and task_form.html we added this for rendering the message <div>
+        {% if message %}
+            <p>{{message}}</p>
+        {% endif %}
+    </div>
+6.5 
+now in wdget we control how a form feild is rendered into HTML, in our custom widget we used attrs, in attrs we can use attribute like class place holder like we usually do in a html tag, as we are using tailwind css we used all necessary css on class attribute class TaskModelForm(forms.ModelForm):
+    class Meta:
+        model = Task
+        # fields = '__all__'
+        fields = ['title', 'description', 'due_date', 'assigned_to']
+        # exclude = ['project', 'is_completed', 'created_at','updated_at']
+        widgets = {
+            'title' : forms.TextInput(attrs={
+                'class' : "border-2 border-gray-300 w-full rounded-lg shadow-sm focus:border-rose-500",
+                'placeholder' : "Enter task title"
+            }),
+            'description' : forms.Textarea(attrs={
+                'class' : "border-2 border-gray-300 w-full rounded-lg shadow-sm focus:border-rose-500",
+                'placeholder' : "Describe your task"
+                }),
+            'due_date' : forms.SelectDateWidget(attrs={
+                'class' : "border-2 border-gray-300  rounded-lg shadow-sm focus:border-rose-500"
+                }),
+            'assigned_to' : forms.CheckboxSelectMultiple(attrs={
+                'class' : "border-2 border-gray-300 rounded-lg shadow-sm focus:border-rose-500",
+                'placeholder' : "Enter task title"
+                })
+        }
+and in template we just load the css with load and static {% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Task Form</title>
+    <link rel="stylesheet" href="{% static "css/output.css" %}">
+</head>
+<body>
+    <div  class="w-1/2 mx-auto mt-8">
+        <div>
+        {% if message %}
+            <p>{{message}}</p>
+        {% endif %}
+    </div>
+    <form action="" method="POST">
+        {% csrf_token %}
+        {{form.as_p}}
+        <button class="bg-rose-600 px-3 py-2 text-white mt-2 rounded-md" type="submit">Submit</button>
+    </form>
+    </div>
+</body>
+</html>
+
+6.6
+So in widget writing attributes or formatting each field mgh be redundant what if we write some rules for each field type so that it can be reuse, thats where mixin comes in where we would do that, class StyledFormMixin:
+    default_classes = "border-2 border-gray-300 w-full p-3 rounded-lg shadow-sm focus:outline-none focus:border-rose-500 focus:ring-rose-500"
+    
+    def apply_styled_widgets(self):
+        for field_name, field in self.fields.items():
+            if isinstance(field.widget, forms.TextInput):
+                field.widget.attrs.update({
+                    'class':self.default_classes,
+                    'placeholder':f"Enter {field.label.lower()}"
+                }) 
+            elif isinstance(field.widget, forms.Textarea):
+                field.widget.attrs.update({
+                    'class': f"{self.default_classes} resize-none",
+                    'placeholder':  f"Enter {field.label.lower()}",
+                    'rows': 5
+                })
+            elif isinstance(field.widget, forms.SelectDateWidget):
+                print("Inside Date")
+                field.widget.attrs.update({
+                    "class": "border-2 border-gray-300 p-3 rounded-lg shadow-sm focus:outline-none focus:border-rose-500 focus:ring-rose-500"
+                })
+            elif isinstance(field.widget, forms.CheckboxSelectMultiple):
+                print("Inside checkbox")
+                field.widget.attrs.update({
+                    'class': "space-y-2"
+                })
+            else:
+                print("Inside else")
+                field.widget.attrs.update({
+                    'class': self.default_classes
+                })   
+    
+#Django Model Form
+class TaskModelForm(StyledFormMixin,forms.ModelForm):
+    class Meta:
+        model = Task
+        # fields = '__all__'
+        fields = ['title', 'description', 'due_date', 'assigned_to']
+        # exclude = ['project', 'is_completed', 'created_at','updated_at']
+	widgets = {
+            'due_date': forms.SelectDateWidget,
+            'assigned_to': forms.CheckboxSelectMultiple
+        }
+               """Widget using mixins"""
+    def __init__(self, *arg, **kwarg):
+        super().__init__(*arg, **kwarg)
+        self.apply_styled_widgets()
+
+now here due date and assigned to field is not correctly working in template as we used SelectdateWidget in forms.py but DtaeField in models.py so in the meta class we specifically wrote there widget so that the StyledFormMixin class understand it
+
+MRO or method resolution order : 
+Inheritance Order:
+TaskModelForm is defined as class TaskModelForm(StyledFormMixin, forms.ModelForm), so the MRO is:
+
+TaskModelForm
+StyledFormMixin
+forms.ModelForm
+Other base classes (e.g., object)
+Initialization Flow:
+
+When super().__init__(*args, **kwargs) is called in TaskModelForm.__init__, Python looks up the next __init__ in the MRO, which is found in forms.ModelForm (since StyledFormMixin doesn't define its own).
+Method Lookup for Styling:
+
+After the base initialization, calling self.apply_styled_widgets() finds the method in StyledFormMixin (because it comes before forms.ModelForm in the MRO), which applies the custom styling to the form fields.
+This order ensures that Django's ModelForm setup runs first, and then your custom styling mixin enhances the form's widgets.

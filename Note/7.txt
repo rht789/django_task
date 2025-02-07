@@ -1,0 +1,207 @@
+7. ORM
+7.1 
+Django ORM s a tool to manipulate database by python code
+its benefit:
+1. reduce complexity in code
+2. make code more understable
+3. help us get more in less time
+
+Django Debug Toolbar:
+Django Debug Toolbar is a configurable set of panels that display various debug information about the current request/response in your Django web application. It is a powerful tool for developers to monitor and analyze what happens under the hood when a page is rendered, helping them identify performance bottlenecks, database query issues, template rendering problems, and more.
+
+The toolbar appears as a small sidebar on the side of your webpage (usually on the right) when you're running your Django project in DEBUG mode . Each panel provides detailed insights into different aspects of your application's behavior during a request.
+
+Why Do We Use Django Debug Toolbar?
+Database Query Analysis :
+One of the most important features of the toolbar is its ability to show all SQL queries executed during a request.
+It highlights slow queries, duplicate queries, and helps optimize database interactions by providing details like query execution time, number of queries, and query structure.
+This is crucial for improving performance, especially in applications with complex database operations.
+Performance Monitoring :
+The toolbar provides timing information for various stages of the request/response cycle, such as view processing, middleware execution, and template rendering.
+This helps developers identify bottlenecks and optimize the performance of their application.
+Template Debugging :
+It shows which templates were used to render a page, including context variables passed to each template.
+This is helpful for debugging template-related issues, ensuring that the correct data is being passed and rendered.
+Cache Inspection :
+If your application uses caching, the toolbar can display cache hits, misses, and other cache-related statistics.
+This helps developers fine-tune their caching strategy to improve performance.
+Request/Response Inspection :
+You can inspect the HTTP headers, GET/POST parameters, cookies, and session data associated with the current request.
+This is useful for debugging issues related to user input, authentication, or API integrations.
+Signals and Logging :
+The toolbar can display information about Django signals that were triggered during the request.
+It also integrates with Python's logging system to show log messages generated during the request.
+Custom Panels :
+Developers can create custom panels to display additional information specific to their application.
+For example, you could create a panel to monitor third-party API calls or track memory usage.
+Ease of Use :
+The toolbar is easy to install and configure, making it accessible even for beginners.
+Its intuitive interface allows developers to quickly access the information they need without diving into logs or writing custom debugging code.
+
+7.2
+Reset Database in Django:
+To reset a dtabbase in, we need to delete the current database in PostgreSQL then also in migrations foler delete all previous file except __init__.py then create a new database on pgadmin then make and apply migration and its done so new models will be:
+from django.db import models
+
+# Create your models here.
+
+class Employee(models.Model):
+    name = models.CharField(max_length=100)
+    email = models.EmailField(unique=True)
+    
+    def __str__(self):
+        return self.name
+
+class Task(models.Model):
+    STATUS_CHOICES = [
+        ('PENDING', 'Pending'),
+        ('IN_PROGRESS','Pending'),
+        ('COMPLETED','Completed')
+    ]
+    project = models.ForeignKey("Project", on_delete=models.CASCADE, default=1)
+    assigned_to = models.ManyToManyField(Employee)
+    title = models.CharField(max_length=250)
+    description = models.TextField()
+    due_date = models.DateField()
+    status = models.CharField(max_length=15, choices=STATUS_CHOICES, default="PENDING")
+    is_completed = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    def __str__(self):
+        return self.title
+    
+class TaskDetail(models.Model):
+    HIGH = 'H'
+    MEDIUM = 'M'
+    LOW = 'L'
+    PRIORITY_OPTIONS = (
+        (HIGH , 'High'),
+        (MEDIUM, 'Medium'),
+        (LOW, 'Low')
+    )
+    # std_id = models.CharField(max_length=200, primary_key=True)
+    task = models.OneToOneField(Task, on_delete=models.CASCADE)
+    assigned_to = models.CharField(max_length=100)
+    priority = models.CharField(
+        max_length=1,choices=PRIORITY_OPTIONS,default=LOW
+    )
+    notes = models.TextField(blank=True,null=True)
+    
+    def __str__(self):
+        return f"Details from Task {self.task}"
+    
+class Project(models.Model):
+    name  = models.CharField(max_length=100)
+    description = models.TextField(blank=True, null=True)
+    start_date = models.DateField()
+    
+    def __str__(self):
+        return self.name
+now by default Django sets a primary key in a id field but we can also set it manually by 
+task_id = models.CharField(max_length=200, primary_key=True)
+
+7.3
+Retreiving data:
+Now we can't create every single data with Django shell manually for that reason we will use faker, Faker is python package, now with this along side our ORM we have made ths which we will run in our dango shell by importing it first then the function populate_db() here is the code we place it in root folder and in file named populate_db.python :
+import os
+import django
+from faker import Faker
+import random
+from tasks.models import Employee, Project, Task, TaskDetail
+
+# Set up Django environment
+os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'task_management.settings')
+django.setup()
+
+# Function to populate the database
+
+
+def populate_db():
+    # Initialize Faker
+    fake = Faker()
+
+    # Create Projects
+    projects = [Project.objects.create(
+        name=fake.bs().capitalize(),
+        description=fake.paragraph(),
+        start_date=fake.date_this_year()
+    ) for _ in range(5)]
+    print(f"Created {len(projects)} projects.")
+
+    # Create Employees
+    employees = [Employee.objects.create(
+        name=fake.name(),
+        email=fake.email()
+    ) for _ in range(10)]
+    print(f"Created {len(employees)} employees.")
+
+    # Create Tasks
+    tasks = []
+    for _ in range(20):
+        task = Task.objects.create(
+            project=random.choice(projects),
+            title=fake.sentence(),
+            description=fake.paragraph(),
+            due_date=fake.date_this_year(),
+            status=random.choice(['PENDING', 'IN_PROGRESS', 'COMPLETED']),
+            is_completed=random.choice([True, False])
+        )
+        task.assigned_to.set(random.sample(employees, random.randint(1, 3)))
+        tasks.append(task)
+    print(f"Created {len(tasks)} tasks.")
+
+    # Create Task Details
+    for task in tasks:
+        TaskDetail.objects.create(
+            task=task,
+            assigned_to=", ".join(
+                [emp.name for emp in task.assigned_to.all()]),
+            priority=random.choice(['H', 'M', 'L']),
+            notes=fake.paragraph()
+        )
+    print("Populated TaskDetails for all tasks.")
+    print("Database populated successfully!")
+we then created a method in views to view all tasks along sde a template named view_task.html which are def view_task(request):
+    tasks = Task.objects.all()
+    return render(request, "view_task.html", {"tasks": tasks})
+and <!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+<body>
+    <div>
+        <ul>
+            {% for task in tasks %}
+                <li>{{task}}</li>
+            {% endfor %}
+        </ul>
+        
+    </div>
+</body>
+</html>
+
+now we can also show only one task by get method by using id or pk (pk=0 won't work) we can't pass a specific type as context doesn't support multiple object passing in html also get the first task by first() method 
+def view_task(request):
+    tasks = Task.objects.all()
+    task = Task.objects.get(id=1)
+    task1 = Task.objects.first()
+    taskpk = Task.objects.get(pk=1)
+    return render(request, "view_task.html", {"tasks": tasks, "task":task, "taskpk":taskpk, "task1":task1})
+
+7.4 Filtering Data
+By filter method we can sent multiple data in context to the template where we would use filter and to not show any type we will use exclude in the code examples are given to look more method here is the reference https://docs.djangoproject.com/en/5.1/ref/models/querysets/ and the code is: 
+def view_task(request):
+    """Show all taskes"""
+    # tasks = Task.objects.all()
+    """Show tasks that are pending"""
+    # tasks = Task.objects.filter(status="PENDING")
+    
+    """SHow tasks that are not in low priority"""
+    tasks = TaskDetail.objects.exclude(priority="L")
+    return render(request, "view_task.html", {"tasks": tasks})
+7.5
+More filtering
