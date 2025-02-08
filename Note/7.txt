@@ -204,4 +204,31 @@ def view_task(request):
     tasks = TaskDetail.objects.exclude(priority="L")
     return render(request, "view_task.html", {"tasks": tasks})
 7.5
-More filtering
+More filtering but specific requirement (lookups)
+exact - Finds an exact match of a field’s value.
+tasks = Task.objects.filter(title__exact="Open")
+iexact - Finds an exact match (case insensitive)
+tasks = Task.objects.filter(title__exact="open")
+contains = Checks if a field contains a given value (case-sensitive)
+tasks = Task.objects.filter(title__contains="O")
+icontains = Same as contains, but case-insensitive.
+tasks = Task.objects.filter(title__icontains="o")
+in - Checks if a field’s value is inside a list of values.
+tasks = Task.objects.filter(prority__in=["HIGH","MEDIUM"])
+gt-find values greater than a value
+gte-find values greater than a value or equal
+lt-find values less than a value
+lte-find values less than a value or equal
+show an example related to our project
+startswith - Finds fields that start with a given value (case-sensitive).
+tasks = Task.objects.filter(title__startswith = "A")
+istartswith - Finds fields that start with a given value (case-insensitive).
+tasks = Task.objects.filter(title__startswith = "a")
+endswith and iendswith is same as startswith and istartswith but the ending word must have the query
+range - find values between two numbers
+show example
+isnull - finds value that are nulls 
+show example
+exists - returns true or false based on available result
+
+and(&) or(|) XOR(^) to use this we need to import Q from django.db.models write about these with example
