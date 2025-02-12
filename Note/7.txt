@@ -232,3 +232,47 @@ show example
 exists - returns true or false based on available result
 
 and(&) or(|) XOR(^) to use this we need to import Q from django.db.models write about these with example
+7.6 Related Data Queries
+Now earlier the reverse relaton we earned how we could access the data from parent model to child model, by putting 'related_name' on relationship like task = models.OneToOneField(Task, on_delete=models.CASCADE,related_name='details')
+in template we can access them for example if we sent all task data to from views.py to template then in template we can show them like this <div>
+        <ul>
+            {% for task in tasks %}
+                <li><p>{{task.title}} -</p>
+                    <span>
+                        {{task.details.priority}}
+                    </span>
+                </li>
+            {% endfor %}
+        </ul>
+        
+**But the biggest issue here is we can see with the Django Debug Tool it ran SQL for every single task which is making thngs more complex and unoptimized for this we will use a new ORM term called select_related it will simply select the reverse relation field and fetch all the data of that model, like till now we used tasks = Task.objects.all() but now if we use tasks = Task.objects.select_related('details').all() it will do the same thing but the only one SQL query will be run (we can see Django debug tools) here it uses left outer join which makes thing more optimized,
+**select_related() only works on OneToOnefield and ForeignKey field
+though we candirectly access task model through taskdetals but still we can access it through select_related so it'll be tasks = TaskDetail.objects.select_related('task').all() and in templates {% for task in tasks %}
+                <li><p>{{task.task.title}} -</p>
+                    <span>
+                        {{task.priority}}
+                    </span>
+                </li>
+            {% endfor %}
+this is only possible in OneToOnefield, in ForeignKey it works only in one way meaning only from child to parent we can use select_related, so there is no reverse relation through select_related in ForeignKey, to solve this we have a new method known as prefetch_related which works for both ManyToManyField and reverse ForeignKey so it will be     tasks = Project.objects.prefetch_related('task_set').all() and in template : <ol>
+            {% for project in tasks %}
+                <li><p>{{project.name}} -</p>
+                    {% for task in project.task_set.all %}
+                        <p>{{task.title}}</p>
+                    {% endfor %}
+                </li>
+            {% endfor %}
+        </ol>
+now reverse relationship in manytomany fields using prefetch_related, so from employye model we would show all tasks of an employee , in views.py def view_task(request):
+    employees = Employee.objects.prefetch_related('tasks').all()
+    return render(request, "view_task.html", {"employees": employees})
+and in templates view_task.html :
+<ol>
+            {% for emp in employees %}
+                <li><p>{{emp.name}} -</p>
+                    {% for task in emp.tasks.all %}
+                        <p>{{task.title}}</p>
+                    {% endfor %}
+                </li>
+            {% endfor %}
+        </ol>
