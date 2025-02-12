@@ -276,3 +276,62 @@ and in templates view_task.html :
                 </li>
             {% endfor %}
         </ol>
+7.7 Django aggregates
+Django's aggregation framework allows you to perform calculations on a queryset to return summarized values like count, sum, average, min, max, etc. instead of fetching individual records. for example :
+def view_task(request):
+    employees = Employee.objects.prefetch_related('tasks').all()
+    task_count = Task.objects.aggregate(task_num = Count("id"))
+    return render(request, "view_task.html", {"employees": employees, "task_count":task_count})
+ and <div>
+        <p>Total Task - {{task_count.task_num}}</p>
+        <ol>
+            {% for emp in employees %}
+                <li><p>{{emp.name}} -</p>
+                    {% for task in emp.tasks.all %}
+                        <p>{{task.title}}</p>
+                    {% endfor %}
+                </li>
+            {% endfor %}
+        </ol>
+        
+    </div>
+
+now annotate is like aggreagate for each object for example we use aggregate to find total task what about task number in each project so for each project we will use count but we will do that using annotate instead of aggregate, so here is the code snippet :
+def view_task(request):
+    project2 = Project.objects.annotate(task_num = Count("task"))
+    return render(request, "view_task.html", {"project2":project2})
+and
+ <ol>
+            {% for proj in project2 %}
+                <li>
+                    <p>{{ proj.name }} - Total Tasks: {{ proj.task_num }}</p>
+                    {% for task in proj.task_set.all %}
+                        <p>{{ task.title }}</p>
+                    {% endfor %}
+                </li>
+            {% endfor %}
+        </ol>
+
+N.B: ### **🔹 Why `annotate(Count("task"))` Uses `task`**
+- `annotate()` operates at the **database (SQL) level** and uses **JOINs**.
+- ForeignKey fields are directly referenced in SQL, so Django uses the **field name (`task`)**.
+- If `related_name` were set in `Task`, you would use that instead.
+- Default behavior: **ForeignKey field name (`task`) is used in `annotate()`**.
+
+---
+
+### **🔹 Why `prefetch_related("task_set")` Uses `task_set`**
+- `prefetch_related()` fetches data in **two separate queries** and links objects in **Python memory**.
+- Django assigns reverse relations using `{modelname}_set`, so the default is **`task_set`**.
+- This is because `prefetch_related()` **does not modify SQL queries** but optimizes object retrieval.
+- Default behavior: **Reverse lookup name (`task_set`) is used in `prefetch_related()`**.
+
+---
+
+### **🔹 Quick Rule to Remember**
+| Method | Works On | Field Name Used |
+|--------|---------|----------------|
+| `annotate(Count("task"))` | **SQL JOINs (Database level)** | **ForeignKey field (`task`)** |
+| `prefetch_related("task_set")` | **Python QuerySet (Memory level)** | **Reverse relation (`task_set`)** |
+
+🚀 **Use `task` in `annotate()`, use `task_set` in `prefetch_related()`!**
