@@ -56,11 +56,5 @@ def create_task(request):
     return render(request,'task_form.html', context)
 
 def view_task(request):
-    """Show all taskes"""
-    # tasks = Task.objects.all()
-    """Show tasks that are pending"""
-    # tasks = Task.objects.filter(status="PENDING")
-    
-    """SHow tasks that are not in low priority"""
-    tasks = TaskDetail.objects.exclude(priority="L")
-    return render(request, "view_task.html", {"tasks": tasks})
+    employees = Employee.objects.prefetch_related('tasks').all()
+    return render(request, "view_task.html", {"employees": employees})

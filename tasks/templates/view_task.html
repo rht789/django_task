@@ -7,15 +7,15 @@
 </head>
 <body>
     <div>
-        <ul>
-            {% for task in tasks %}
-                <li><p>{{task.task}} -
-                    <span>
-                        {{task.priority}}
-                    </span>
-                </p></li>
+        <ol>
+            {% for emp in employees %}
+                <li><p>{{emp.name}} -</p>
+                    {% for task in emp.tasks.all %}
+                        <p>{{task.title}}</p>
+                    {% endfor %}
+                </li>
             {% endfor %}
-        </ul>
+        </ol>
         
     </div>
 </body>
