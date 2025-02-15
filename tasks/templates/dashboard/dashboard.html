@@ -1,27 +1,24 @@
+{% load static %}
 <!DOCTYPE html>
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <meta
-      name="viewport"
-      content="width=device-width, initial-scale=1.0"
-    />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>{% block title %}{% endblock title %}</title>
-    <script src="https://kit.fontawesome.com/a076d05399.js" crossorigin="anonymous"></script>
+    <script
+      src="https://kit.fontawesome.com/a076d05399.js"
+      crossorigin="anonymous"
+    ></script>
     <link rel="stylesheet" href="{% static "css/output.css" %}">
   </head>
 
   <body class="bg-gray-50 p-6">
     <div class="mx-auto max-w-[1400px]">
       <!-- Header -->
-      <header
-        class="flex items-center justify-between mb-8"
-      >
+      <header class="flex items-center justify-between mb-8">
         <h1 class="text-2xl font-semibold">Dashboard</h1>
         <div class="flex items-center gap-4">
-          <button
-            class="relative rounded-full p-2 hover:bg-gray-100"
-          >
+          <button class="relative rounded-full p-2 hover:bg-gray-100">
             <svg
               xmlns="http://www.w3.org/2000/svg"
               fill="none"
@@ -50,17 +47,11 @@
         <div class="grid grid-cols-4 gap-6">
           <!-- Total Task -->
           <div class="bg-white rounded-xl p-6 shadow-sm">
-            <h3
-              class="text-sm font-medium text-gray-500 mb-4"
-            >
-              Total Task
-            </h3>
+            <h3 class="text-sm font-medium text-gray-500 mb-4">Total Task</h3>
             <div class="flex justify-between items-start">
               <div>
                 <p class="text-3xl font-semibold mb-1">3</p>
-                <p class="text-gray-500 text-sm">
-                  111 Last Month
-                </p>
+                <p class="text-gray-500 text-sm">111 Last Month</p>
               </div>
               <div class="bg-blue-100 p-3 rounded-full">
                 <svg
@@ -83,17 +74,13 @@
           </div>
           <!-- COmplete Task  -->
           <div class="bg-white rounded-xl p-6 shadow-sm">
-            <h3
-              class="text-sm font-medium text-gray-500 mb-4"
-            >
+            <h3 class="text-sm font-medium text-gray-500 mb-4">
               Completed Task
             </h3>
             <div class="flex justify-between items-start">
               <div>
                 <p class="text-3xl font-semibold mb-1">1</p>
-                <p class="text-gray-500 text-sm">
-                  111 Last Month
-                </p>
+                <p class="text-gray-500 text-sm">111 Last Month</p>
               </div>
               <div class="bg-green-100 p-3 rounded-full">
                 <svg
@@ -116,17 +103,13 @@
           </div>
           <!-- Task in Progress -->
           <div class="bg-white rounded-xl p-6 shadow-sm">
-            <h3
-              class="text-sm font-medium text-gray-500 mb-4"
-            >
+            <h3 class="text-sm font-medium text-gray-500 mb-4">
               Task in Progress
             </h3>
             <div class="flex justify-between items-start">
               <div>
                 <p class="text-3xl font-semibold mb-1">1</p>
-                <p class="text-gray-500 text-sm">
-                  111 Last Month
-                </p>
+                <p class="text-gray-500 text-sm">111 Last Month</p>
               </div>
               <div class="bg-yellow-100 p-3 rounded-full">
                 <svg
@@ -149,17 +132,11 @@
           </div>
           <!-- Todos -->
           <div class="bg-white rounded-xl p-6 shadow-sm">
-            <h3
-              class="text-sm font-medium text-gray-500 mb-4"
-            >
-              Todos
-            </h3>
+            <h3 class="text-sm font-medium text-gray-500 mb-4">Todos</h3>
             <div class="flex justify-between items-start">
               <div>
                 <p class="text-3xl font-semibold mb-1">3</p>
-                <p class="text-gray-500 text-sm">
-                  111 Last Month
-                </p>
+                <p class="text-gray-500 text-sm">111 Last Month</p>
               </div>
               <div class="bg-purple-100 p-3 rounded-full">
                 <svg

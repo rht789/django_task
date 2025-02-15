@@ -27,12 +27,12 @@
             "state": {
               "type": "markdown",
               "state": {
-                "file": "Module_6.md",
+                "file": "Module_7.md",
                 "mode": "source",
                 "source": false
               },
               "icon": "lucide-file",
-              "title": "Module_6"
+              "title": "Module_7"
             }
           }
         ],
@@ -180,10 +180,11 @@
   },
   "active": "31f2d25d5abc93a7",
   "lastOpenFiles": [
-    "7.txt",
     "Module_5.md",
     "module_4.md",
     "module_2.md",
-    "Module_6.md"
+    "Module_7.md",
+    "Module_6.md",
+    "7.txt"
   ]
 }
