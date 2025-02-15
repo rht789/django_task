@@ -46,6 +46,7 @@
         <!-- stats grid -->
         <div class="grid grid-cols-4 gap-6">
           <!-- Total Task -->
+           <a href="{% url 'manager_dashboard' %}">
           <div class="bg-white rounded-xl p-6 shadow-sm">
             <h3 class="text-sm font-medium text-gray-500 mb-4">Total Task</h3>
             <div class="flex justify-between items-start">
@@ -72,36 +73,40 @@
               </div>
             </div>
           </div>
+          </a>
           <!-- COmplete Task  -->
-          <div class="bg-white rounded-xl p-6 shadow-sm">
-            <h3 class="text-sm font-medium text-gray-500 mb-4">
-              Completed Task
-            </h3>
-            <div class="flex justify-between items-start">
-              <div>
-                <p class="text-3xl font-semibold mb-1">{{counts.completed_task}}</p>
-                <p class="text-gray-500 text-sm">111 Last Month</p>
-              </div>
-              <div class="bg-green-100 p-3 rounded-full">
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke-width="1.5"
-                  stroke="currentColor"
-                  class="w-6 h-6 text-green-600"
-                >
-                  <path
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    stroke-width="2"
-                    d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"
-                  />
-                </svg>
+           <a href="{% url 'manager_dashboard' %}?type=completed">
+            <div class="bg-white rounded-xl p-6 shadow-sm">
+              <h3 class="text-sm font-medium text-gray-500 mb-4">
+                Completed Task
+              </h3>
+              <div class="flex justify-between items-start">
+                <div>
+                  <p class="text-3xl font-semibold mb-1">{{counts.completed_task}}</p>
+                  <p class="text-gray-500 text-sm">111 Last Month</p>
+                </div>
+                <div class="bg-green-100 p-3 rounded-full">
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke-width="1.5"
+                    stroke="currentColor"
+                    class="w-6 h-6 text-green-600"
+                  >
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="2"
+                      d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"
+                    />
+                  </svg>
+                </div>
               </div>
             </div>
-          </div>
+          </a>
           <!-- Task in Progress -->
+           <a href="{% url 'manager_dashboard' %}?type=in_progress">
           <div class="bg-white rounded-xl p-6 shadow-sm">
             <h3 class="text-sm font-medium text-gray-500 mb-4">
               Task in Progress
@@ -130,7 +135,9 @@
               </div>
             </div>
           </div>
+          </a>
           <!-- Todos -->
+           <a href="{% url 'manager_dashboard' %}?type=pending">
           <div class="bg-white rounded-xl p-6 shadow-sm">
             <h3 class="text-sm font-medium text-gray-500 mb-4">Todos</h3>
             <div class="flex justify-between items-start">
@@ -157,6 +164,7 @@
               </div>
             </div>
           </div>
+          </a>
         </div>
         {% block tasks %} {% endblock tasks %}
       </main>

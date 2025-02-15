@@ -12,11 +12,17 @@ def home(request):
     #http response// json response
     return HttpResponse("Welcome to the task management system")
 def manager_dashboard(request):
-    tasks=Task.objects.select_related('details').prefetch_related('assigned_to').all()
-    # total_task = tasks.count()
-    # completed_task = Task.objects.filter(status='COMPLETED').count()
-    # in_progress_task = Task.objects.filter(status='IN_PROGRESS').count()
-    # pending_task = Task.objects.filter(status='PENDING').count()
+    type = request.GET.get('type','all')
+    base_query=Task.objects.select_related('details').prefetch_related('assigned_to')
+    if type=='completed':
+        tasks=base_query.filter(status='COMPLETED')
+    elif type=='in_progress':
+        tasks=base_query.filter(status='IN_PROGRESS')
+    elif type=='pending':
+        tasks=base_query.filter(status='PENDING')
+    else:
+        tasks=base_query.all()
+    print(type)
     counts = Task.objects.aggregate(
         total_task=Count('id'),
         completed_task=Count('id', filter=Q(status='COMPLETED')),
