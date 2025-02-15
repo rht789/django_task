@@ -12,7 +12,7 @@ class Employee(models.Model):
 class Task(models.Model):
     STATUS_CHOICES = [
         ('PENDING', 'Pending'),
-        ('IN_PROGRESS','Pending'),
+        ('IN_PROGRESS','In Progress'),
         ('COMPLETED','Completed')
     ]
     project = models.ForeignKey("Project", on_delete=models.CASCADE, default=1)

@@ -12,7 +12,20 @@ def home(request):
     #http response// json response
     return HttpResponse("Welcome to the task management system")
 def manager_dashboard(request):
-    return render(request, "dashboard/manager_dashboard.html")
+    tasks=Task.objects.all()
+    total_task = tasks.count()
+    completed_task = Task.objects.filter(status='COMPLETED').count()
+    in_progress_task = Task.objects.filter(status='IN_PROGRESS').count()
+    pending_task = Task.objects.filter(status='PENDING').count()
+    
+    context = {
+        "tasks":tasks,
+        "total_task":total_task,
+        "completed_task":completed_task,
+        "in_progress_task":in_progress_task,
+        "pending_task":pending_task
+    }
+    return render(request, "dashboard/manager_dashboard.html",context=context)
 def user_dashboard(request):
     return render(request, "dashboard/user_dashboard.html")
 def test(request):

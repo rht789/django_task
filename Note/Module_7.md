@@ -198,7 +198,8 @@ populate_db()
 
 ✅ **To Run the Script in Django Shell**:
 ```bash
-python populate_db.py
+from populate_db import populate_db
+populate_db()
 ```
 
 ---

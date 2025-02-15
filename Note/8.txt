@@ -1,3 +1,23 @@
+module 8: Django CRUD operation
+8.1 Dynamic Dashboard
+in our dashboard/dashboard.html and manager_dashboard.html everything is in static we need to make it dynamic by sending the data to the template from views.py, so in views.py :
+def manager_dashboard(request):
+    tasks=Task.objects.all()
+    total_task = tasks.count()
+    completed_task = Task.objects.filter(status='COMPLETED').count()
+    in_progress_task = Task.objects.filter(status='IN_PROGRESS').count()
+    pending_task = Task.objects.filter(status='PENDING').count()
+    
+    context = {
+        "tasks":tasks,
+        "total_task":total_task,
+        "completed_task":completed_task,
+        "in_progress_task":in_progress_task,
+        "pending_task":pending_task
+    }
+    return render(request, "dashboard/manager_dashboard.html",context=context)
+
+and dashboard.html:
 {% load static %}
 <!DOCTYPE html>
 <html lang="en">
@@ -164,3 +184,65 @@
     {% include "footer.html" %}
   </body>
 </html>
+
+here we simply used the context like total task,completed_task etc
+
+moving onto next section in manager_dashboard.html:
+{% extends "dashboard/dashboard.html" %} {% block tasks %} 
+{% block title %}Manager Dashboard{% endblock title %}
+
+<!-- Tasks Grid -->
+<div class="bg-white rounded-xl shadow-sm">
+  <!-- div 1 -->
+  <div
+    class="grid grid-cols-4 items-center p-4 mt-8 text-gray-500 text-sm border-b border-gray-100"
+  >
+    <p>TASK TITLE</p>
+    <p>PRIORITY</p>
+    <p>TEAM</p>
+    <p>CREATED AT</p>
+  </div>
+  <!-- div 2 -->
+  {% for task in tasks %}
+    <div class="grid grid-cols-4 items-center p-4 gap-4 text-gray-500 text-sm border-b border-gray-100">
+    <div class="flex items-center gap-2">
+      <div class="w-2 h-2 bg-green-500 rounded-full"></div>
+      <div>{{task.title}}</div>
+    </div>
+
+    <div>
+      <span
+        class="px-3 py-1 text-sm bg-blue-200 items-center justify-center rounded-2xl text-blue-500"
+        >{{task.details.get_priority_display}}</span
+      >
+    </div>
+    <div>
+      <div class="flex -space-x-2">
+        {% for emp in task.assigned_to.all %}
+          <div
+            class="w-8 h-8 rounded-full bg-blue-500 flex items-center justify-center text-white text-sm border-2 border-white"
+          >
+            {{emp.name|slice:":2"}}
+          </div>
+        {% endfor %}
+      </div>
+    </div>
+    <div class="text-gray-500 text-sm">{{task.created_at|timesince}} ago</div>
+  </div>
+  {% endfor %}
+  
+</div>
+
+{% endblock %}
+
+at first we needed to show the title and since we have tasks from the context, we simply loop all the tasks div and in title wrote tasks.title, now for priority we need to do the reverse relation through details field as priority is in taskdetail model hence we would use task.details.priority but it will only show H,L,M which is not human readable so for this we would use the get_foo_dis[play method which makes content human readable by searching up the keys value in our case which was HIGH = 'H'
+    MEDIUM = 'M'
+    LOW = 'L'
+    PRIORITY_OPTIONS = (
+        (HIGH , 'High'),
+        (MEDIUM, 'Medium'),
+        (LOW, 'Low')
+    )
+so we will write task.details.get_priority_display
+now in teams field we need first 2 or 1 letter of the employees name so for that for each task we run a loop for getting the all employee names then we used Django tag to slice it, we would need first 2 letter so we wrote emp.name|slice:":2"
+then in created a section we used Django timesince tag to view the time as past format like 1 hour ago or 1 month ago etc so it will be task.created_at|timesince
