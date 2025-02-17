@@ -21,6 +21,10 @@
       <div class="w-2 h-2 bg-green-500 rounded-full flex-shrink-0"></div>
       <span class="flex-grow">{{task.title}}</span>
       <a href="{% url 'update_task' task.id %}" class="px-2 py-1 bg-green-500 text-white">Edit</a>
+      <form action="{% url 'delete_task' task.id %}" method="POST">
+        {% csrf_token %}
+        <button class="px-2 py-1 bg-red-500 text-white" type="submit">Delete</button>
+      </form>
     </div>
 
     <div>
