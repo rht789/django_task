@@ -20,7 +20,7 @@
     <div class="flex items-center gap-2">
       <div class="w-2 h-2 bg-green-500 rounded-full flex-shrink-0"></div>
       <span class="flex-grow">{{task.title}}</span>
-      <div><span>{{task.status}}</span></div>
+      <a href="{% url 'update_task' task.id %}" class="px-2 py-1 bg-green-500 text-white">Edit</a>
     </div>
 
     <div>

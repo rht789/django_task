@@ -657,3 +657,40 @@ task_form.html :
     </div>
 </body>
 </html>
+
+8.5 Update Query on Database
+updating a task is as same as creating task atleast procedurwise, so at first we will create a path in urls.py :
+path('update_task/<int:id>', update_task, name='update_task')
+now in views.py we need to make the view for update_task, as we would update or edit a task we would need to fetch that specific task in the webpage thats why we need task id :
+def update_task(request,id):
+    task = Task.objects.get(id=id)
+    task_form = TaskModelForm(instance=task)
+    
+    if task.details:
+        taskdetail_form = TaskDetailModelForm(instance=task.details)
+        
+    if request.method == "POST":
+        task_form = TaskModelForm(request.POST, instance=task)
+        taskdetail_form = TaskDetailModelForm(request.POST, instance=task.details)
+        if task_form.is_valid() and taskdetail_form.is_valid():
+            """For Django model Form"""
+            task = task_form.save()
+            taskdetail = taskdetail_form.save(commit=False)
+            taskdetail.task = task
+            taskdetail.save()
+            
+            messages.success(request, "Task Updated Successfully")
+            return redirect('updated_task',id)                
+    context = {
+        "task_form" : task_form,
+        "taskdetail_form" : taskdetail_form
+    }
+    return render(request,'task_form.html', context)
+
+okay now t is as same as create_task, the noticeable changes are we are fetching the task by using id then we are putting those in a instance now instance is for to show that task on the templates each field so user would easily know what to edit and also some of the task seems like soesn't have the task detail info correctly so we are putting task.details in condition if exist then we create taskdetail_form object of that task then rest are same except messages and redirect we have adjusted the messages, and redirect url is as same as we set in the paths name, 
+now in manaer_dashboard.html we added a edit option beside task name :
+<div class="flex items-center gap-2">
+      <div class="w-2 h-2 bg-green-500 rounded-full flex-shrink-0"></div>
+      <span class="flex-grow">{{task.title}}</span>
+      <a href="{% url 'update_task' task.id %}" class="px-2 py-1 bg-green-500 text-white">Edit</a>
+    </div>

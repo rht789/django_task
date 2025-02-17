@@ -70,6 +70,32 @@ def create_task(request):
     }
     return render(request,'task_form.html', context)
 
+def update_task(request,id):
+    task = Task.objects.get(id=id)
+    task_form = TaskModelForm(instance=task)
+    
+    if task.details:
+        taskdetail_form = TaskDetailModelForm(instance=task.details)
+        
+    if request.method == "POST":
+        task_form = TaskModelForm(request.POST, instance=task)
+        taskdetail_form = TaskDetailModelForm(request.POST, instance=task.details)
+        if task_form.is_valid() and taskdetail_form.is_valid():
+            """For Django model Form"""
+            task = task_form.save()
+            taskdetail = taskdetail_form.save(commit=False)
+            taskdetail.task = task
+            taskdetail.save()
+            
+            messages.success(request, "Task Updated Successfully")
+            return redirect('update_task',id)                
+    context = {
+        "task_form" : task_form,
+        "taskdetail_form" : taskdetail_form
+    }
+    return render(request,'task_form.html', context)
+
+
 def view_task(request):
     project2 = Project.objects.annotate(task_num = Count("task"))
     return render(request, "view_task.html", {"project2":project2})
