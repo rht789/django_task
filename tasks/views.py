@@ -1,8 +1,9 @@
-from django.shortcuts import render
+from django.shortcuts import render,redirect
 from django.http import HttpResponse
-from tasks.forms import TaskForm,TaskModelForm
+from tasks.forms import TaskForm,TaskModelForm, TaskDetailModelForm
 from tasks.models import *
 from django.db.models import Q, Count, Max, Min
+from django.contrib import messages
 
 # Create your views here.
 def home(request):
@@ -50,31 +51,22 @@ def test(request):
     return render(request,'test.html', context)
 
 def create_task(request):
-    form = TaskModelForm()
+    task_form = TaskModelForm()
+    taskdetail_form = TaskDetailModelForm()
     if request.method == "POST":
-        form = TaskModelForm(request.POST)
-        if form.is_valid():
+        task_form = TaskModelForm(request.POST)
+        taskdetail_form = TaskDetailModelForm(request.POST)
+        if task_form.is_valid() and taskdetail_form.is_valid():
             """For Django model Form"""
-            # form.save()
-            # return HttpResponse("Task Created Succesfully")
-            return render(request, 'task_form.html', {'form':form, 'message':'task created successsfully'})
-
-            
-    
-            """For Django Form Data"""
-            #         data = form.cleaned_data
-            #         title = data.get('title')
-            #         description = data.get('description')
-            #         due_date = data.get('due_date')
-            #         assigned_to = data.get('assigned_to')
-            #         task = Task.objects.create(title=title,description=description,due_date=due_date)
-                    
-            #         for emp_id in assigned_to:
-            #             employee = Employee.objects.get(id=emp_id)
-            #             task.assigned_to.add(employee)
-                    
+            task = task_form.save()
+            taskdetail = taskdetail_form.save(commit=False)
+            taskdetail.task = task
+            taskdetail.save()
+            messages.success(request, "Task Created Successfully")
+            return redirect('create_task')                
     context = {
-        "form" : form
+        "task_form" : task_form,
+        "taskdetail_form" : taskdetail_form
     }
     return render(request,'task_form.html', context)
 

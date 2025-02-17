@@ -1,4 +1,6 @@
-{% extends "dashboard/dashboard.html" %} {% block tasks %} 
+{% extends "dashboard/dashboard.html" %} 
+
+{% block tasks %} 
 {% block title %}Manager Dashboard{% endblock title %}
 
 <!-- Tasks Grid -->
@@ -16,9 +18,9 @@
   {% for task in tasks %}
     <div class="grid grid-cols-4 items-center p-4 gap-4 text-gray-500 text-sm border-b border-gray-100">
     <div class="flex items-center gap-2">
-      <div class="w-2 h-2 bg-green-500 rounded-full"></div>
-      <span>{{task.title}}</span>
-      <span>{{task.status}}</span>
+      <div class="w-2 h-2 bg-green-500 rounded-full flex-shrink-0"></div>
+      <span class="flex-grow">{{task.title}}</span>
+      <div><span>{{task.status}}</span></div>
     </div>
 
     <div>

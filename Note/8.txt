@@ -246,3 +246,414 @@ at first we needed to show the title and since we have tasks from the context, w
 so we will write task.details.get_priority_display
 now in teams field we need first 2 or 1 letter of the employees name so for that for each task we run a loop for getting the all employee names then we used Django tag to slice it, we would need first 2 letter so we wrote emp.name|slice:":2"
 then in created a section we used Django timesince tag to view the time as past format like 1 hour ago or 1 month ago etc so it will be task.created_at|timesince
+
+8.2 Optimizing Database Query
+so in our debug tool we have seen that we would need around 45 sql to run it which takes a significant amount of time to run so we need to optimize it the first one we need to optimize is the tasks by including select_related for the onetoone relation of tasks and taskdetails which will ensure the join of both of the models and reduce the amount of sql query now tasks=Task.objects.select_related('details').all()
+for the employee and tasks relation optimization we would simply add the prefetch_related('assigned_to') after select_related like this tasks=Task.objects.select_related('details').prefetch_related('assigned_to').all() 
+now for all the countswe will use aggregate and inside it we will filter it with the help of Q method/object , counts = Task.objects.aggregate(
+        total_task=Count('id'),
+        completed_task=Count('id', filter=Q(status='COMPLETED')),
+        in_progress_task=Count('id', filter=Q(status='IN_PROGRESS')),
+        pending_task=Count('id', filter=Q(status='PENDING'))
+    )
+    
+    context = {
+        "tasks":tasks,
+        "counts":counts
+    }
+and in dashboard.html we would replace those count context as counts.total_task, counts.completed_task etc
+
+8.3 Dynamic Query, URLS name, URL tag
+it would have better if we click on complted task then it will show us only the completed task, so to do that we need to make everytask section dynamic , in views.py manager_dashboard function we would need to find the type of tasks we wanna see so we will use a get request here to fetch the type type = request.GET.get('type','all') then we need to set a name for our manager-dashboard url so whenever we change the url the template recognizes it, to understand it more deeply lets see the templates part change, <a href="{% url 'manager_dashboard' %}?type=completed">
+            <div class="bg-white rounded-xl p-6 shadow-sm">
+              <h3 class="text-sm font-medium text-gray-500 mb-4">
+                Completed Task
+              </h3>
+              <div class="flex justify-between items-start">
+                <div>
+                  <p class="text-3xl font-semibold mb-1">{{counts.completed_task}}</p>
+                  <p class="text-gray-500 text-sm">111 Last Month</p>
+                </div>
+                <div class="bg-green-100 p-3 rounded-full">
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke-width="1.5"
+                    stroke="currentColor"
+                    class="w-6 h-6 text-green-600"
+                  >
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="2"
+                      d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"
+                    />
+                  </svg>
+                </div>
+              </div>
+            </div>
+          </a>
+here we add the completed task section in an anchor tag so it is clickable now we also need to add a url so thats where we added url Django tag with ?type=completed which will sent completed as type to our views now here  href="{% url 'manager_dashboard' %}?type=completed" on url manager_dashboard should be as same as name in urls.py so for this manager dashboard it would be in urls.py path('dashboard/', manager_dashboard, name="manager_dashboard"), now if we ever change the path from 'dashboard' to something else our templates would still understand it was manager_dashboard page bcz of the name attribute as it helps dynamic changes, okay now to actually show the related task of each status we need to assign the tasks dynamically so in views.py we wrote type = request.GET.get('type','all')
+    base_query=Task.objects.select_related('details').prefetch_related('assigned_to')
+    if type=='completed':
+        tasks=base_query.filter(status='COMPLETED')
+    elif type=='in_progress':
+        tasks=base_query.filter(status='IN_PROGRESS')
+    elif type=='pending':
+        tasks=base_query.filter(status='PENDING')
+    else:
+        tasks=base_query.all() 
+in manager_dashboard function and n dashboard.html added anchor tag with type for each section {% load static %}
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title><b>{% block title %}{% endblock title %}</b></title>
+    <script
+      src="https://kit.fontawesome.com/a076d05399.js"
+      crossorigin="anonymous"
+    ></script>
+    <link rel="stylesheet" href="{% static "css/output.css" %}">
+  </head>
+
+  <body class="bg-gray-50 p-6">
+    <div class="mx-auto max-w-[1400px]">
+      <!-- Header -->
+      <header class="flex items-center justify-between mb-8">
+        <h1 class="text-2xl font-semibold">Dashboard</h1>
+        <div class="flex items-center gap-4">
+          <button class="relative rounded-full p-2 hover:bg-gray-100">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke-width="1.5"
+              stroke="currentColor"
+              class="size-6"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                d="M14.857 17.082a23.848 23.848 0 0 0 5.454-1.31A8.967 8.967 0 0 1 18 9.75V9A6 6 0 0 0 6 9v.75a8.967 8.967 0 0 1-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 0 1-5.714 0m5.714 0a3 3 0 1 1-5.714 0"
+              />
+            </svg>
+          </button>
+          <button
+            class="h-10 w-10 rounded-full bg-blue-500 font-semibold text-white"
+          >
+            B
+          </button>
+        </div>
+      </header>
+
+      <main>
+        <!-- stats grid -->
+        <div class="grid grid-cols-4 gap-6">
+          <!-- Total Task -->
+           <a href="{% url 'manager_dashboard' %}">
+          <div class="bg-white rounded-xl p-6 shadow-sm">
+            <h3 class="text-sm font-medium text-gray-500 mb-4">Total Task</h3>
+            <div class="flex justify-between items-start">
+              <div>
+                <p class="text-3xl font-semibold mb-1">{{counts.total_task}}</p>
+                <p class="text-gray-500 text-sm">111 Last Month</p>
+              </div>
+              <div class="bg-blue-100 p-3 rounded-full">
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke-width="1.5"
+                  stroke="currentColor"
+                  class="w-6 h-6 text-blue-600 font-semibold"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M15.666 3.888A2.25 2.25 0 0 0 13.5 2.25h-3c-1.03 0-1.9.693-2.166 1.638m7.332 0c.055.194.084.4.084.612v0a.75.75 0 0 1-.75.75H9a.75.75 0 0 1-.75-.75v0c0-.212.03-.418.084-.612m7.332 0c.646.049 1.288.11 1.927.184 1.1.128 1.907 1.077 1.907 2.185V19.5a2.25 2.25 0 0 1-2.25 2.25H6.75A2.25 2.25 0 0 1 4.5 19.5V6.257c0-1.108.806-2.057 1.907-2.185a48.208 48.208 0 0 1 1.927-.184"
+                  />
+                </svg>
+              </div>
+            </div>
+          </div>
+          </a>
+          <!-- COmplete Task  -->
+           <a href="{% url 'manager_dashboard' %}?type=completed">
+            <div class="bg-white rounded-xl p-6 shadow-sm">
+              <h3 class="text-sm font-medium text-gray-500 mb-4">
+                Completed Task
+              </h3>
+              <div class="flex justify-between items-start">
+                <div>
+                  <p class="text-3xl font-semibold mb-1">{{counts.completed_task}}</p>
+                  <p class="text-gray-500 text-sm">111 Last Month</p>
+                </div>
+                <div class="bg-green-100 p-3 rounded-full">
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke-width="1.5"
+                    stroke="currentColor"
+                    class="w-6 h-6 text-green-600"
+                  >
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="2"
+                      d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"
+                    />
+                  </svg>
+                </div>
+              </div>
+            </div>
+          </a>
+          <!-- Task in Progress -->
+           <a href="{% url 'manager_dashboard' %}?type=in_progress">
+          <div class="bg-white rounded-xl p-6 shadow-sm">
+            <h3 class="text-sm font-medium text-gray-500 mb-4">
+              Task in Progress
+            </h3>
+            <div class="flex justify-between items-start">
+              <div>
+                <p class="text-3xl font-semibold mb-1">{{counts.in_progress_task}}</p>
+                <p class="text-gray-500 text-sm">111 Last Month</p>
+              </div>
+              <div class="bg-yellow-100 p-3 rounded-full">
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke-width="1.5"
+                  stroke="currentColor"
+                  class="w-6 h-6 text-yellow-600"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"
+                  />
+                </svg>
+              </div>
+            </div>
+          </div>
+          </a>
+          <!-- Todos -->
+           <a href="{% url 'manager_dashboard' %}?type=pending">
+          <div class="bg-white rounded-xl p-6 shadow-sm">
+            <h3 class="text-sm font-medium text-gray-500 mb-4">Todos</h3>
+            <div class="flex justify-between items-start">
+              <div>
+                <p class="text-3xl font-semibold mb-1">{{counts.pending_task}}</p>
+                <p class="text-gray-500 text-sm">111 Last Month</p>
+              </div>
+              <div class="bg-purple-100 p-3 rounded-full">
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke-width="1.5"
+                  stroke="currentColor"
+                  class="w-6 h-6 text-purple-600"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M15.666 3.888A2.25 2.25 0 0 0 13.5 2.25h-3c-1.03 0-1.9.693-2.166 1.638m7.332 0c.055.194.084.4.084.612v0a.75.75 0 0 1-.75.75H9a.75.75 0 0 1-.75-.75v0c0-.212.03-.418.084-.612m7.332 0c.646.049 1.288.11 1.927.184 1.1.128 1.907 1.077 1.907 2.185V19.5a2.25 2.25 0 0 1-2.25 2.25H6.75A2.25 2.25 0 0 1 4.5 19.5V6.257c0-1.108.806-2.057 1.907-2.185a48.208 48.208 0 0 1 1.927-.184"
+                  />
+                </svg>
+              </div>
+            </div>
+          </div>
+          </a>
+        </div>
+        {% block tasks %} {% endblock tasks %}
+      </main>
+    </div>
+    {% include "footer.html" %}
+  </body>
+</html>
+
+8.4 Create Multiple Object in a Single View
+now in our create task view we also need to store the task details feilds for the specific task we are creating, so we have creaed a new model form in forms.py for task details
+class TaskDetailModelForm:
+    model=TaskDetail
+    fields=['priority','notes']
+and in views.py we have updated the create_task view 
+
+def create_task(request):
+    task_form = TaskModelForm()
+    taskdetail_form = TaskDetailModelForm()
+    if request.method == "POST":
+        task_form = TaskModelForm(request.POST)
+        taskdetail_form = TaskDetailModelForm(request.POST)
+        if task_form.is_valid() and taskdetail_form.is_valid():
+            """For Django model Form"""
+            task = task_form.save()
+            task_detail = taskdetail_form.save(commit=False)
+            task_detail.task = task
+            taskdetail.save()
+            # return HttpResponse("Task Created Succesfully")
+            return render(request, 'task_form.html', {'form':task_form, 'message':'task created successsfully'})                   
+    context = {
+        "form" : task_form
+    }
+    return render(request,'task_form.html', context)
+now we simply made 2 object one for task and another for taskdetail but in save in post method we have written commit=false because we also have a task field in task details as there is no default or null alowation we want it to create object but not save in db
+then we would assign the task information then save it, now next we need to refine our success message and redirect meaning after successful task creation it would inform the user along with redirect to the form for that we used Django messages libraray from django.contrib and redirect from Django.shortcuts for redirect we also need to save the name in urls and in forms we inheritated the mixin class and forms model form class now task_form.html we adjusted the messages received from views, as there might be a lot of message so fot that reason we run for loops and we also need to write our correct context to show all field in webpage so the updated code is :
+forms.py : from django import forms
+from tasks.models import Task,TaskDetail
+# from tasks.models import *
+
+# Django Form
+class TaskForm(forms.Form):
+    title = forms.CharField(max_length=250, label="Task Title")
+    description = forms.CharField(widget=forms.Textarea, label='Task Description')
+    due_date = forms.DateField(widget=forms.SelectDateWidget)
+    assigned_to = forms.MultipleChoiceField(widget=forms.CheckboxSelectMultiple, choices=[], label='Assigned To')
+    
+    def __init__(self, *args, **kwargs):
+        employees = kwargs.pop("employees",[])
+        super().__init__(*args,**kwargs)
+        self.fields['assigned_to'].choices = [
+            (emp.id,emp.name) for emp in employees
+        ]
+
+class StyledFormMixin:
+    default_classes = "border-2 border-gray-300 w-full p-3 rounded-lg shadow-sm focus:outline-none focus:border-rose-500 focus:ring-rose-500"
+    
+    def apply_styled_widgets(self):
+        for field_name, field in self.fields.items():
+            if isinstance(field.widget, forms.TextInput):
+                field.widget.attrs.update({
+                    'class':self.default_classes,
+                    'placeholder':f"Enter {field.label.lower()}"
+                }) 
+            elif isinstance(field.widget, forms.Textarea):
+                field.widget.attrs.update({
+                    'class': f"{self.default_classes} resize-none",
+                    'placeholder':  f"Enter {field.label.lower()}",
+                    'rows': 5
+                })
+            elif isinstance(field.widget, forms.SelectDateWidget):
+                print("Inside Date")
+                field.widget.attrs.update({
+                    "class": "border-2 border-gray-300 bg-gray-300 p-3 rounded-lg shadow-sm focus:outline-none focus:border-rose-500 focus:ring-rose-500"
+                })
+            elif isinstance(field.widget, forms.CheckboxSelectMultiple):
+                print("Inside checkbox")
+                field.widget.attrs.update({
+                    'class': "space-y-2"
+                })
+            else:
+                print("Inside else")
+                field.widget.attrs.update({
+                    'class': self.default_classes
+                })   
+    
+#Django Model Form
+class TaskModelForm(StyledFormMixin,forms.ModelForm):
+    class Meta:
+        model = Task
+        # fields = '__all__'
+        fields = ['title', 'description', 'due_date', 'assigned_to']
+        widgets = {
+            'due_date': forms.SelectDateWidget,
+            'assigned_to': forms.CheckboxSelectMultiple
+        }
+        # exclude = ['project', 'is_completed', 'created_at','updated_at']
+        # widgets = {
+        #     'title': forms.TextInput(attrs={
+        #         'class': (
+        #             "block w-full px-4 py-2 border border-gray-300 "
+        #             "rounded-md shadow-sm focus:outline-none focus:ring-rose-200 focus:border-rose-500"
+        #         ),
+        #         'placeholder': "Enter Task Title"
+        #     }),
+        #     'description': forms.Textarea(attrs={
+        #         'class': (
+        #             "block w-full px-4 py-2 border border-gray-300 "
+        #             "rounded-md shadow-sm focus:ring-rose-200 focus:border-rose-500"
+        #         ),
+        #         'placeholder': "Describe your task",
+        #         'rows': 4  # Makes the textarea a bit taller
+        #     }),
+        #     'due_date': forms.SelectDateWidget(attrs={
+        #         'class': (
+        #             "px-4 py-2 border border-gray-300 "
+        #             "rounded-md shadow-sm focus:ring-rose-200 focus:border-rose-500"
+        #         )
+        #     }),
+        #     'assigned_to': forms.CheckboxSelectMultiple(attrs={
+        #         # Tailwind doesn't style checkboxes by default,
+        #         # so here we're applying some utility classes.
+        #         'class': "form-checkbox h-5 w-5 text-rose-600"
+        #     }),
+        # }
+        """Widget using mixins"""
+    def __init__(self, *arg, **kwarg):
+        super().__init__(*arg, **kwarg)
+        self.apply_styled_widgets()
+class TaskDetailModelForm(StyledFormMixin,forms.ModelForm):
+    class Meta:
+        model=TaskDetail
+        fields=['priority','notes']
+    
+    def __init__(self, *arg, **kwarg):
+        super().__init__(*arg, **kwarg)
+        self.apply_styled_widgets()
+
+views.py:
+def create_task(request):
+    task_form = TaskModelForm()
+    taskdetail_form = TaskDetailModelForm()
+    if request.method == "POST":
+        task_form = TaskModelForm(request.POST)
+        taskdetail_form = TaskDetailModelForm(request.POST)
+        if task_form.is_valid() and taskdetail_form.is_valid():
+            """For Django model Form"""
+            task = task_form.save()
+            taskdetail = taskdetail_form.save(commit=False)
+            taskdetail.task = task
+            taskdetail.save()
+            messages.success(request, "Task Created Successfully")
+            return redirect('create_task')                
+    context = {
+        "task_form" : task_form,
+        "taskdetail_form" : taskdetail_form
+    }
+    return render(request,'task_form.html', context)
+
+task_form.html :
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Task Form</title>
+    <link rel="stylesheet" href="{% static "css/output.css" %}">
+</head>
+<body>
+    <div  class="w-1/2 mx-auto mt-8">
+        <div>
+        {% if messages %}
+            {% for message in messages %}
+                <div class="px-2 py-1 {% if message.tags == 'success' %}bg-green-500{% endif %} ">{{message}}</div>
+            {% endfor %}
+        {% endif %}
+    </div>
+        <form action="" method="POST">
+            {% csrf_token %}
+            {{ task_form.as_p }}
+            {{ taskdetail_form.as_p }}
+            <button class="bg-rose-600 px-3 py-2 text-white mt-2 rounded-md" type="submit">Submit</button>
+        </form>
+    </div>
+</body>
+</html>
