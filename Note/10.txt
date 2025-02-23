@@ -1,0 +1,5 @@
+10 Building Django authentication
+
+10.1 Introduction to Django Admin Panel
+
+Django admin panel is a powerful toold which provides a user-friendly interface for managing data (models and database records), users, permissions, and other aspects of your application without having to manually write low-level CRUD (Create, Read, Update, Delete) operations
