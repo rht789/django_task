@@ -2,4 +2,75 @@
 
 10.1 Introduction to Django Admin Panel
 
-Django admin panel is a powerful toold which provides a user-friendly interface for managing data (models and database records), users, permissions, and other aspects of your application without having to manually write low-level CRUD (Create, Read, Update, Delete) operations
+Django admin panel is a powerful toold which provides a user-friendly interface for managing data (models and database records), users, permissions, and other aspects of your application without having to manually write low-level CRUD (Create, Read, Update, Delete) operations, 
+
+http://127.0.0.1:8000/admin/ s the address where we can do this changes, now we can also do CRUD on our database through admin panel, to that we need to add it in admin, to do that we need go to the app specific admin.py in our case we have done everything in tasks  till now  so in tasks admin we need to write admin.site.register(model name) like admin.site.register(Task), then when we visit the link we will see all our task or other model data , here are the code:
+from django.contrib import admin
+from tasks.models import *
+
+# Register your models here.
+admin.site.register(Task)
+admin.site.register(TaskDetail)
+admin.site.register(Employee)
+admin.site.register(Project)
+
+10.2 Signup using User creation form
+
+Now we will work on users app, in users views we will write functionality and in urls we add the path, so lets do it, at first in main urls of the root folder we need to add the users path so that we don't need to add every path in root path:
+from django.contrib import admin
+from django.urls import path,include
+from debug_toolbar.toolbar import debug_toolbar_urls
+from tasks.views import home
+
+
+urlpatterns = [
+    path("admin/", admin.site.urls),
+    path("", home),
+    path("tasks/", include("tasks.urls")),
+    path("users/", include("users.urls"))
+] + debug_toolbar_urls()
+
+ after that create a function in views, we named it signup and add it to users urls.py then create templates folder then registration folder and create a signup.html template, then as usual we will create a form and pass the form data as context to template but here we will use use builtin UserCreationForm to send the the basic name and password with confirm password field to template as for now the code of the files are:
+users urls.py:
+from django.urls import path,include
+from users.views import signup
+
+urlpatterns = [
+    path('sign-up/', signup, name='sign-up')
+]
+
+views.py:
+from django.shortcuts import render
+from django.contrib.auth.forms import UserCreationForm
+
+
+# Create your views here.
+def signup(request):
+    if request.method == 'GET':
+        form = UserCreationForm()
+    elif request.method == 'POST':
+        form = UserCreationForm(request.POST)
+        if form.is_valid():
+            print(form.cleaned_data)
+            form.save()
+    return render(request,"registration/signup.html",{"form":form})
+
+signup.html:
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+<body>
+    <p>Hi</p>
+    <div> 
+        <form action="" method = "POST">
+            {% csrf_token %}
+            {{form.as_p}}
+            <button type="submit">Sign Up</button>
+        </form>
+    </div>
+</body>
+</html>
