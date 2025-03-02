@@ -74,3 +74,213 @@ signup.html:
     </div>
 </body>
 </html>
+
+10.3 Customizing UserCreationForm
+
+we have seen only username password and confirm password are there but we also need some other field iin a signup form for that we need to manually create aa form for customizing UserCreationForm, for that we will ceate a form.py and on there we will create a class named RegisterForm and in it we will create a meta class to define the fields we need to show in our template and also super.init ensures that the initialization logic of UserCreationForm (e.g., setting up the default fields like username, password1, and password2) is executed before your customizations, also we will use build in User model so the code is :
+from django.contrib.auth.forms import UserCreationForm
+from django.contrib.auth.models import User
+
+class RegisterForm(UserCreationForm):
+    class Meta:
+        model = User
+        fields = ['username','first_name','last_name','password1','password2','email']
+        
+    def __init__(self, *args, **kwargs):
+        super(UserCreationForm, self).__init__(*args, **kwargs)
+        for fieldname in ['username', 'password1', 'password2']:
+            self.fields[fieldname].help_text = None
+
+and we would also update views.py based on this :
+from django.shortcuts import render
+from django.contrib.auth.forms import UserCreationForm
+from users.forms import RegisterForm
+
+
+# Create your views here.
+def signup(request):
+    if request.method == 'GET':
+        form = RegisterForm()
+    if request.method == 'POST':
+        form = RegisterForm(request.POST)
+        if form.is_valid():
+            form.save()
+        else:
+            print("Form is not valid")
+    return render(request, 'registration/register.html', {'form': form})
+
+10.4 Form field Validation
+
+What if I don't wanna use UserCreationForm and want to create our custom register field, well we can do that, 
+class CustomRegisterForm(forms.ModelForm):
+    password = forms.CharField(widget=forms.PasswordInput)
+    password2 = forms.CharField(widget=forms.PasswordInput)
+    
+    class Meta:
+        model = User
+        fields = ['username','first_name','last_name','password1','password2','email']
+    
+
+now we need to add validation for password field, we can add other field if we want but for now only password will do, we will use clean_<field_name> method, it is used to add validation for specific field, so in our case it will be clean_password1,
+class CustomRegisterForm(forms.ModelForm):
+    password1 = forms.CharField(widget=forms.PasswordInput)
+    password2 = forms.CharField(widget=forms.PasswordInput)
+    
+    class Meta:
+        model = User
+        fields = ['username','first_name','last_name','password1','password2','email']
+    def clean_password1(self):
+        password1 = self.cleaned_data.get('password1')
+        if not password1:
+            raise forms.ValidationError("Password is required.")
+        if len(password1) < 8:
+            raise forms.ValidationError("Password must be at least 8 characters long.")
+        if not any(char.isupper() for char in password1):
+            raise forms.ValidationError("Password must contain at least one uppercase letter.")
+        if not any(char.isdigit() for char in password1):
+            raise forms.ValidationError("Password must contain at least one number.")
+        if not any(char in '!@#$%^&*()' for char in password1):
+            raise forms.ValidationError("Password must contain at least one special character (e.g., !@#$%^&*()).")
+        return password1
+
+
+***How cleaned_data Works
+During form validation (when form.is_valid() is called), Django processes each field in the form.
+For each field, Django:
+Performs basic validation (e.g., required, max_length).
+Calls any clean_<field_name> method if defined.
+Stores the returned value in self.cleaned_data, a dictionary that holds the validated data for all fields.
+
+10.5 Field and Non-feild Errors
+
+So we have already seen field related errors, non-field related errors are well not related to field error but validation of error between them like password and password confirmation not matching, something like this, so we previously did validation for password field now we will do some other field and non field errors too, 
+from django import forms
+from django.contrib.auth.forms import UserCreationForm
+from django.contrib.auth.models import User
+
+class RegisterForm(UserCreationForm):
+    class Meta:
+        model = User
+        fields = ['username','first_name','last_name','password1','password2','email']
+        
+    def __init__(self, *args, **kwargs):
+        super(UserCreationForm, self).__init__(*args, **kwargs)
+        for fieldname in ['username', 'password1', 'password2']:
+            self.fields[fieldname].help_text = None
+            
+class CustomRegisterForm(forms.ModelForm):
+    password1 = forms.CharField(widget=forms.PasswordInput)
+    password2 = forms.CharField(widget=forms.PasswordInput)
+    
+    class Meta:
+        model = User
+        fields = ['username','first_name','last_name','password1','password2','email']
+
+        
+    def clean_email(self):
+        email = self.cleaned_data.get('email')
+        email_exist = User.objects.get(email == email).exists()
+        
+        if email_exist:
+            raise forms.ValidationError("This email is already associated with an accont")
+        
+    def clean_username(self):
+        username = self.cleaned_data.get('username')
+        username_exist = User.objects.get(username == username).exists()
+        
+        if username_exist:
+            raise forms.ValidationError("Username already Exists")
+    
+    def clean_password1(self):
+        password1 = self.cleaned_data.get('password1')
+        errors = []
+        if not password1:
+            errors.append("Password is required.")
+        if len(password1) < 8:
+            errors.append("Password must be at least 8 characters long.")
+        if not any(char.isupper() for char in password1):
+            errors.append("Password must contain at least one uppercase letter.")
+        if not any(char.isdigit() for char in password1):
+            errors.append("Password must contain at least one number.")
+        if not any(char in '!@#$%^&*()' for char in password1):
+            errors.append("Password must contain at least one special character (e.g., !@#$%^&*()).")
+        if errors:
+            raise forms.ValidationError(errors)
+        return password1
+    
+    def clean(self):
+        cleaned_data = super().clean()
+        password1 = cleaned_data.get('password1')
+        password2 = cleaned_data.get('password1')
+        
+        if password1 and password2 and password1!= password2:
+            raise forms.ValidationError("Password Do Not Match")
+        return cleaned_data
+
+return is important as it checks validation and then we need to send the validated data to databases, so clean ensures form-level validation by ensuring password1 and password2 matches
+updated views 
+from django.shortcuts import render
+from django.contrib.auth.forms import UserCreationForm
+from users.forms import RegisterForm,CustomRegisterForm
+
+
+# Create your views here.
+def signup(request):
+    if request.method == 'GET':
+        form = CustomRegisterForm()
+    if request.method == 'POST':
+        form = CustomRegisterForm(request.POST)
+        if form.is_valid():
+            user = form.save(commit=False)  # Prevent immediate save to handle password hashing
+            user.set_password(form.cleaned_data['password1'])  # Hash the password
+            user.save()
+        else:
+            print("Form is not valid")
+    return render(request, 'registration/register.html', {'form': form})
+
+here we wouldn't immediately save it, as without user.set_password it won't store password in database as we will see from admin panel so we need to hash the password then save it and finally the register template 
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Register</title>
+</head>
+<body>
+    <p>Hi</p>
+    <div>
+        {% if form.non_field_errors %}
+            {% for error in form.non_field_errors %}
+                {{ error }}
+            {% endfor %}
+        {% endif %}
+        <form action="" method="POST">
+            {% csrf_token %}
+            {% for field in form %}
+                <p>
+                    {% if field.label == 'Password1' %}
+                        <label for="{{ field.id_for_label }}">Password</label>
+                        {{ field }}
+                    {% elif field.label == 'Password2' %}
+                        <label for="{{ field.id_for_label }}">Confirm Password</label>
+                        {{ field }}
+                    {% else %}
+                        <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+                        {{ field }}
+                    {% endif %}
+                    {% if field.errors %}
+                        <ul>
+                            {% for error in field.errors %}
+                                <li>{{ error }}</li>
+                            {% endfor %}
+                        </ul>
+                    {% endif %}
+                </p>
+            {% endfor %}
+            <button type="submit">Sign Up</button>
+        </form>
+    </div>
+</body>
+</html>
+
+here non field error will display errors like password do not match then we render each field as password1 and password2 will be shown directly we rename it manually to password and confirm password respectfully 

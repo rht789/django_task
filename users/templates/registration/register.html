@@ -5,11 +5,12 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Register</title>
-    {% comment %} <link rel="stylesheet" href="{% static "css/output.css" %}"> {% endcomment %}
+    <link rel="stylesheet" href="{% static "css/output.css" %}">
 
 </head>
 <body>
-    <h2>Welcome to Authentication System</h2>
+    <div class="w-1/2 mx-auto mt-8">
+        <h2>Welcome to Authentication System</h2>
     <div>
         {% if messages %}
             {% for message in messages %}
@@ -46,8 +47,9 @@
                     {% endif %}
                 </p>
             {% endfor %}
-            <button type="submit">Sign Up</button>
+            <button type="submit" class="bg-rose-500 text-white mt-2 px-3 py-2 rounded-md">Sign Up</button>
         </form>
+    </div>
     </div>
 </body>
 </html>

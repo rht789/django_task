@@ -1,6 +1,7 @@
 from django import forms
 from django.contrib.auth.forms import UserCreationForm
 from django.contrib.auth.models import User
+from tasks.forms import StyledFormMixin
 
 class RegisterForm(UserCreationForm):
     class Meta:
@@ -12,7 +13,7 @@ class RegisterForm(UserCreationForm):
         for fieldname in ['username', 'password1', 'password2']:
             self.fields[fieldname].help_text = None
             
-class CustomRegisterForm(forms.ModelForm):
+class CustomRegisterForm(StyledFormMixin,forms.ModelForm):
     password1 = forms.CharField(widget=forms.PasswordInput)
     password2 = forms.CharField(widget=forms.PasswordInput)
     
