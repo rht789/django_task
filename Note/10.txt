@@ -423,3 +423,60 @@ Return Value:
 Returns True if the user is authenticated (i.e., they’ve logged in via login() in your sign_in view).
 Returns False if the user is not authenticated, meaning they’re an AnonymousUser (an unauthenticated or anonymous user, like a visitor who hasn’t logged in).
 Location: This method is part of Django’s authentication system and is accessible via request.user.is_authenticated in views, templates, or middleware.
+
+10.7 Logout
+
+It is simple but we need to understand its flow at first lets see the code :
+core apps home.html:
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+<body>
+    <p>Welcome to the home page</p>
+    {% if user.is_authenticated %}
+        <p>Welcome, {{ user }}</p>
+        <form action="{% url 'sign-out' %}">
+            <button type="submit">Sign Out</button>
+        </form>
+    {% else %}
+        annonymus user
+    {% endif %}
+</body>
+</html>
+
+users app views.py:
+def sign_out(request):
+    if request.method == 'POST':
+        logout(request)
+    return redirect('sign-in')
+
+urls.py:
+from django.urls import path,include
+from users.views import signup,sign_in,sign_out
+
+urlpatterns = [
+    path('sign-up/', signup, name='sign-up'),
+    path('sign-in/', sign_in, name='sign-in'),
+    path('sign-out/', sign_out, name='sign-out'),
+]
+
+
+Now the flow:
+Here’s the step-by-step flow after submitting the sign-out form:
+
+URLs (First Request):
+Browser submits POST to /users/sign-out/.
+urls.py matches path('sign-out/', sign_out, name='sign-out') and calls the sign_out view.
+Views (sign_out):
+sign_out processes the POST request, logs out the user with logout(request), and redirects to 'sign-in' (resolved to /users/sign-in/).
+URLs (Redirect Request):
+Browser sends GET to /users/sign-in/ (from the redirect).
+urls.py matches path('sign-in/', sign_in, name='sign-in') and calls the sign_in view.
+Views (sign_in):
+sign_in processes the GET request, renders signin.html with an empty form (since no POST data is present).
+Templates (signin.html):
+Django renders signin.html, displaying the login form for the anonymous user.

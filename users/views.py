@@ -36,3 +36,8 @@ def sign_in(request):
             return render(request,'registration/signin.html', {'error': 'Invalid Username or Password'})
         
     return render(request, "registration/signin.html")
+
+def sign_out(request):
+    if request.method == 'POST':
+        logout(request)
+    return redirect('sign-in')

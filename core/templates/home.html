@@ -8,7 +8,10 @@
 <body>
     <p>Welcome to the home page</p>
     {% if user.is_authenticated %}
-        <p>Welcome, {{ user.username }}</p>
+        <p>Welcome, {{ user }}</p>
+        <form action="{% url 'sign-out' %}">
+            <button type="submit">Sign Out</button>
+        </form>
     {% else %}
         annonymus user
     {% endif %}
