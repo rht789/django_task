@@ -283,4 +283,143 @@ here we wouldn't immediately save it, as without user.set_password it won't stor
 </body>
 </html>
 
-here non field error will display errors like password do not match then we render each field as password1 and password2 will be shown directly we rename it manually to password and confirm password respectfully 
+here non field error will display errors like password do not match then we render each field as password1 and password2 will be shown directly we rename it manually to password and confirm password respectfully , also to make it loo good we would use the mixin function from tasks apps forms.py by importing it and also on tasks forms.py we would run superinit in mixin class instead of runnit it in every class
+
+
+10.6 Login with Custom HTML Form
+
+even though Django has built in login features we will do login functionality using HTML form, at first we nned create the vew and urls so 
+
+def sign_in(request):
+    if request.method == "POST":
+        username = request.POST.get('username')
+        password = request.POST.get('password')
+        
+        user = authenticate(username=username,password=password)
+        
+        if user is not None:
+            login(request,user)
+            return redirect('home')
+        
+        else:
+            return render(request,'registration/signin.html', {'error': 'Invalid Username or Password'})
+        
+    return render(request, "registration/signin.html")
+
+here reqest.POST is dictionary like object containing all form Data,
+authenticate(username=username, password=password): Uses Django’s authenticate() function (from django.contrib.auth) to verify the user’s credentials.
+It checks the database (via the User model and authentication backend, typically ModelBackend) to see if a user exists with the provided username and password.
+If the credentials are valid, it returns the User object; if not, it returns None.
+This function hashes the provided password and compares it with the stored (hashed) password in the database, ensuring secure authentication. if user is not None: Checks if authenticate() returned a valid User object (i.e., the credentials were correct).
+login(request, user): Logs the user into the session using Django’s login() function (also from django.contrib.auth).
+It adds the user to the current session, setting request.user to the authenticated User object.request.user: In Django, request.user is a special attribute of the HttpRequest object that represents the currently authenticated user for a given request. By default, request.user is an instance of AnonymousUser (an unauthenticated user) until a user logs in.
+
+urls:
+from django.urls import path,include
+from users.views import signup,sign_in
+
+urlpatterns = [
+    path('sign-up/', signup, name='sign-up'),
+    path('sign-in/', sign_in, name='sign-in'),
+]
+
+template, signin.html:
+
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sign In</title>
+    <link rel="stylesheet" href="{% static "css/output.css" %}">
+</head>
+<body class="bg-gray-100">
+    <div class="container mx-auto p-4 max-w-md">
+        <h2 class="text-2xl font-bold text-gray-800 mb-4">Sign In to Authentication System</h2>
+        <div>
+            {% if error %}
+                <p class="bg-red-600 text-white py-2 px-4 rounded mb-4">{{ error }}</p>
+            {% endif %}
+        </div>
+        <form method="POST" action="" class="space-y-4">
+            {% csrf_token %}
+            <div>
+                <label for="id_username" class="block text-sm font-medium text-gray-700">Username</label>
+                <input type="text" name="username" required class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50">
+            </div>
+            <div>
+                <label for="id_password" class="block text-sm font-medium text-gray-700">Password</label>
+                <input type="password" name="password" required class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50">
+            </div>
+            <button type="submit" class="bg-rose-500 text-white py-2 px-3 rounded-md hover:bg-rose-600">Sign In</button>
+        </form>
+    </div>
+</body>
+</html>
+
+"""These are also needed so include these too"""
+{% comment %} <!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sign In</title>
+</head>
+<body>
+    <form method="POST">
+        {% csrf_token %}
+        <label for="username">Username</label>
+        <input type="text" name="username" placeholder="Enter your username">
+        <label for="password">Password</label>
+        <input type="password" name="password" placeholder="Enter your password">
+        <button type="submit">Sign In</button>
+    </form>
+</body>
+</html> {% endcomment %}
+
+now we didn't had the homepage so we would create a homepage and as home page doesn't fall into any app like tasks or users we will create a separarte app named core where these type of functionality will be there like home about etc, so ater creating home with django-admin startapp core we would write it in settings.py installed app, the on main urls.py in task_management folder it will be :
+from django.contrib import admin
+from django.urls import path,include
+from debug_toolbar.toolbar import debug_toolbar_urls
+from core.views import home
+
+
+urlpatterns = [
+    path("admin/", admin.site.urls),
+    path("", home, name='home'),
+    path("tasks/", include("tasks.urls")),
+    path("users/", include("users.urls"))
+] + debug_toolbar_urls()
+
+then cores  views.py will be :
+from django.http import HttpResponse
+from django.shortcuts import render
+
+# Create your views here.
+def home(request):
+    return render(request,'home.html')
+
+and home.html will be:
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Home</title>
+</head>
+<body>
+    <p>Welcome to the home page</p>
+    {% if user.is_authenticated %}
+        <p>Welcome, {{ user.username }}</p>
+    {% else %}
+        annonymus user
+    {% endif %}
+</body>
+</html>
+
+is_authenticated: In Django, is_authenticated is a method (or property, depending on the context) available on User objects (from django.contrib.auth.models.User). It indicates whether the user associated with a request (i.e., request.user) is authenticated (logged in) or not.
+Return Value:
+Returns True if the user is authenticated (i.e., they’ve logged in via login() in your sign_in view).
+Returns False if the user is not authenticated, meaning they’re an AnonymousUser (an unauthenticated or anonymous user, like a visitor who hasn’t logged in).
+Location: This method is part of Django’s authentication system and is accessible via request.user.is_authenticated in views, templates, or middleware.

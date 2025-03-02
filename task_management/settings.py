@@ -39,6 +39,7 @@ INSTALLED_APPS = [
     "django.contrib.staticfiles",
     "tasks",
     "users",
+    "core",
     "debug_toolbar"
 ]
 
@@ -64,7 +65,7 @@ ROOT_URLCONF = "task_management.urls"
 TEMPLATES = [
     {
         "BACKEND": "django.template.backends.django.DjangoTemplates",
-        "DIRS": [],
+        "DIRS": [BASE_DIR / 'templates'],  # Add this line
         "APP_DIRS": True,
         "OPTIONS": {
             "context_processors": [

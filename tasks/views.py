@@ -6,12 +6,6 @@ from django.db.models import Q, Count, Max, Min
 from django.contrib import messages
 
 # Create your views here.
-def home(request):
-    #Work with db
-    #transform data
-    #Data pass
-    #http response// json response
-    return HttpResponse("Welcome to the task management system")
 def manager_dashboard(request):
     type = request.GET.get('type','all')
     base_query=Task.objects.select_related('details').prefetch_related('assigned_to')
