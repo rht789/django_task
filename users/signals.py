@@ -11,7 +11,7 @@ def send_activation_mail(sender, instance , created, **kwargs):
         token = default_token_generator.make_token(instance)
         activation_url = f"{settings.FRONTEND_URL}/users/activate/{instance.id}/{token}"
         subject = f'Activate Your Account'
-        message = f'Hi {instance.username}, \\n\\n Please click this link to activate your account: \n\n {activation_url}\n\n Thank you.'
+        message = f'Hi {instance.username}, \n\n Please click this link to activate your account: \n{activation_url}\n\nThank you.'
         receipent_list = [instance.email]
         
         try:
