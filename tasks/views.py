@@ -17,7 +17,6 @@ def manager_dashboard(request):
         tasks=base_query.filter(status='PENDING')
     else:
         tasks=base_query.all()
-    print(type)
     counts = Task.objects.aggregate(
         total_task=Count('id'),
         completed_task=Count('id', filter=Q(status='COMPLETED')),
