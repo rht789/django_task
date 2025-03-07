@@ -1,6 +1,7 @@
 from django.db import models
-from django.db.models.signals import post_save,pre_save
+from django.db.models.signals import post_save,pre_save,m2m_changed,post_delete
 from django.dispatch import receiver
+from django.core.mail import send_mail
 # Create your models here.
 
 class Employee(models.Model):
@@ -39,7 +40,7 @@ class TaskDetail(models.Model):
         (LOW, 'Low')
     )
     # std_id = models.CharField(max_length=200, primary_key=True)
-    task = models.OneToOneField(Task, on_delete=models.CASCADE,related_name='details')
+    task = models.OneToOneField(Task, on_delete=models.DO_NOTHING,related_name='details')
     # assigned_to = models.CharField(max_length=100)
     priority = models.CharField(
         max_length=1,choices=PRIORITY_OPTIONS,default=LOW
@@ -71,3 +72,17 @@ def notify_task_creation(sender,instance,created, **kwargs):
     if created:
         instance.is_completed = True
         instance.save()
+
+@receiver(m2m_changed, sender=Task.assigned_to.through)
+def notify_employees_on_task_creation(sender, instance, action, **kwargs):
+    if action == 'post_add':
+        print(instance, instance.assigned_to.all())
+        assigned_emails = [emp.email for emp in instance.assigned_to.all()]
+        print("Checking....", assigned_emails)
+        send_mail(
+            "New Task Assigned",
+            f"You have been assigned to the task: {instance.title}",
+            "rahatrezaulkarim@gmail.com",
+            assigned_emails,
+            fail_silently=False,
+        )
