@@ -1,0 +1,68 @@
+11 Django Signals
+11.1 Introduction to Signals
+Django signals are a powerful feature in the Django framework that allow different parts of an application to communicate with each other without being tightly coupled. They enable actions to be triggered when specific events occur, such as saving or deleting a model instance, user authentication, or custom events defined by the developer.
+Common Django models signals:
+pre_save
+When it’s sent: Just before an object is saved to the database (before the .save() method commits the changes).
+Arguments:
+sender: The model class (e.g., Task).
+instance: The instance being saved.
+raw: Boolean indicating if the instance is saved as raw (e.g., via fixtures).
+using: The database alias being used.
+update_fields: A set of fields being updated (if specified in .save()).
+
+from django.db.models.signals import post_save,pre_save
+from django.dispatch import receiver
+@receiver(pre_save,sender = Task)
+def notify_task_creation(sender,instance, **kwargs):
+    print("sender", sender)
+    print("instance", instance)
+    instance.is_completed = True
+
+b. When it’s sent: Just after an object is saved to the database.
+Arguments:
+Same as pre_save, plus:
+created: Boolean indicating if the instance was created (True) or updated (False).
+@receiver(post_save,sender = Task)
+def notify_task_creation(sender,instance,created, **kwargs):
+    print("sender", sender)
+    print("instance", instance)
+    print(created)
+    if created:
+        instance.is_completed = True
+        instance.save()
+c. pre_delete
+When it’s sent: Just before an object is deleted from the database.
+Arguments:
+sender: The model class.
+instance: The instance being deleted.
+using: The database alias.
+
+d. post_delete
+When it’s sent: Just after an object is deleted from the database.
+Arguments: Same as pre_delete.
+Use Case: Perform post-deletion tasks, like notifying users.
+
+e. pre_init
+When it’s sent: Before a model’s __init__ method is called.
+Arguments:
+sender: The model class.
+args: Positional arguments passed to __init__.
+kwargs: Keyword arguments passed to __init__.
+Use Case: Rarely used, but could modify initialization behavior.
+
+f. post_init
+When it’s sent: After a model’s __init__ method is called.
+Arguments: sender and instance.
+Use Case: Set up instance-specific data after creation.
+
+g. m2m_changed
+When it’s sent: When a ManyToManyField (like Task.assigned_to) is modified.
+Arguments:
+sender: The through model of the ManyToManyField.
+instance: The instance whose M2M field changed.
+action: String indicating the change (pre_add, post_add, pre_remove, post_remove, pre_clear, post_clear).
+reverse: Boolean indicating the direction of the relation.
+model: The model class of the objects being added/removed.
+pk_set: Set of primary keys being added/removed.
+Use Case: React to changes in assigned employees.
