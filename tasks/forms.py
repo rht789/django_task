@@ -25,15 +25,21 @@ class StyledFormMixin:
     
     def apply_styled_widgets(self):
         for field_name, field in self.fields.items():
-            if isinstance(field.widget, forms.TextInput):
+            if isinstance(field.widget, forms.PasswordInput):
                 field.widget.attrs.update({
-                    'class':self.default_classes,
-                    'placeholder':f"Enter {field.label.lower()}"
+                    'class': self.default_classes,
+                    'placeholder': f"Enter Password",
+                    'autocomplete': 'new-password'  # Optional: improves security by preventing autofill
+                })
+            elif isinstance(field.widget, forms.TextInput):
+                field.widget.attrs.update({
+                    'class': self.default_classes,
+                    'placeholder': f"Enter {field.label}"
                 }) 
             elif isinstance(field.widget, forms.Textarea):
                 field.widget.attrs.update({
                     'class': f"{self.default_classes} resize-none",
-                    'placeholder':  f"Enter {field.label.lower()}",
+                    'placeholder': f"Enter {field.label}",
                     'rows': 5
                 })
             elif isinstance(field.widget, forms.SelectDateWidget):
@@ -50,7 +56,7 @@ class StyledFormMixin:
                 print("Inside else")
                 field.widget.attrs.update({
                     'class': self.default_classes
-                })   
+                })
     
 #Django Model Form
 class TaskModelForm(StyledFormMixin,forms.ModelForm):
