@@ -13,9 +13,10 @@ def signup(request):
         form = CustomRegisterForm(request.POST)
         if form.is_valid():
             user = form.save(commit=False)  # Prevent immediate save to handle password hashing
-            user.set_password(form.cleaned_data['password1'])  # Hash the password
+            user.set_password(form.cleaned_data.get('password1'))  # Hash the password
+            user.is_active = False
             user.save()
-            messages.success(request, "Account Created Successfully")
+            messages.success(request, "A confirmation mail sent, please check your email")
         else:
             print("Form is not valid")
             messages.error(request, "Account Creation failed")
