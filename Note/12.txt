@@ -1,0 +1,5 @@
+12. Role Based Control Access
+
+12.1 Introduction to RBAC
+In dome project there are different roles to do certain things based on their power, like from our project perspective,
+admin will have access to everything, manager will have project creation and task creation power where employees will have task read and task update power, though there maybe more these are just one or 2 example for each role.
