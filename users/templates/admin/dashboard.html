@@ -21,7 +21,7 @@
               >Dashboard</a
             >
             <a href="#" class="text-gray-600 hover:text-gray-800">Tasks</a>
-            <a href="group-list.html" class="text-gray-600 hover:text-gray-800"
+            <a href="{% url 'group-list' %}" class="text-gray-600 hover:text-gray-800"
               >Groups</a
             >
             <a
@@ -90,7 +90,7 @@
           <a href="#" class="block py-2 text-gray-600 hover:text-gray-800"
             >Tasks</a
           >
-          <a href="#" class="block py-2 text-gray-600 hover:text-gray-800"
+          <a href="{% url 'group-list' %}" class="block py-2 text-gray-600 hover:text-gray-800"
             >Groups</a
           >
           <a href="{% url 'create-group' %}" class="block py-2 text-gray-600 hover:text-gray-800"
