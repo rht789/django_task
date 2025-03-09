@@ -1,5 +1,5 @@
 from django import forms
-from django.contrib.auth.forms import UserCreationForm
+from django.contrib.auth.forms import UserCreationForm, AuthenticationForm
 from django.contrib.auth.models import User,Group, Permission
 from tasks.forms import StyledFormMixin
 
@@ -67,6 +67,10 @@ class CustomRegisterForm(StyledFormMixin,forms.ModelForm):
         if password1 and password2 and password1!= password2:
             raise forms.ValidationError("Password Do Not Match")
         return cleaned_data
+    
+class LoginForm(StyledFormMixin, AuthenticationForm):
+    def __init__(self, *arg, **kwarg):
+        super().__init__(*arg, **kwarg)
     
 class AssignRoleForm(StyledFormMixin, forms.Form):
     role = forms.ModelChoiceField(
