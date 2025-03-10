@@ -3,3 +3,904 @@
 12.1 Introduction to RBAC
 In dome project there are different roles to do certain things based on their power, like from our project perspective,
 admin will have access to everything, manager will have project creation and task creation power where employees will have task read and task update power, though there maybe more these are just one or 2 example for each role.
+
+12.2 Assign Default Role and Create Admin View
+
+at first create a signal where a new user will be assigned to a default role with no permission,
+@receiver(post_save,sender = User)
+def assign_role(sender, instance, created, **kwargs):
+    if created:
+        user_group,created = Group.objects.get_or_create(name = 'User')
+        instance.groups.add(user_group)
+        instance.save()
+
+here, The if created: check ensures it only runs for new users, not updates.
+Group.objects.get_or_create(name='User') either fetches an existing "User" group or creates it if it doesn’t exist. The created variable here (second one in the tuple) tells you if a new group was made, but you’re not using it—fine for now.
+instance.groups.add(user_group) assigns the user to the "User" group. groups is a ManyToManyField on the User model, linking users to groups. Since groups is a ManyToManyField, Django automatically provides a manager (like objects for querysets) to handle the relationship.
+The .add() method is a built-in method of this manager. It lets you add one or more objects (in this case, a Group instance) to the relationship.
+So, instance.groups.add(user_group) means: "Add the user_group (a Group object named 'User') to this user’s set of groups."
+Behind the scenes, this updates the intermediate table (auth_user_groups) that links User and Group in the database.
+instance.save() persists the group assignment to the database.
+
+an admin dashboard template is also required, so the views and urls fooor this are:
+from django.urls import path,include
+from users.views import signup,sign_in,sign_out,admin_dashboard
+
+urlpatterns = [
+    path('sign-up/', signup, name='sign-up'),
+    path('sign-in/', sign_in, name='sign-in'),
+    path('sign-out/', sign_out, name='sign-out'),
+    path('admin/dashboard', admin_dashboard, name = 'admin-dashboard')
+]
+
+def admin_dashboard(request):
+    return render(request, 'admin/dashboard.html')
+
+admin/dashboard.html:
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Document</title>
+    <link rel="stylesheet" href="{% static 'css/output.css' %}" />
+  </head>
+  <body>
+    <header class="bg-white shadow-md">
+      <nav class="container mx-auto px-6 py-3">
+        <div class="flex justify-between items-center">
+          <a href="index.html" class="text-xl font-bold text-gray-800"
+            >Taskify</a
+          >
+          <div class="hidden md:flex space-x-4">
+            <a
+              href="admin-dashboard.html"
+              class="text-gray-600 hover:text-gray-800"
+              >Dashboard</a
+            >
+            <a href="#" class="text-gray-600 hover:text-gray-800">Tasks</a>
+            <a href="group-list.html" class="text-gray-600 hover:text-gray-800"
+              >Groups</a
+            >
+            <a
+              href="create-group.html"
+              class="text-gray-600 hover:text-gray-800"
+              >Create Group</a
+            >
+          </div>
+          <div class="flex items-center">
+            <div class="relative">
+              <button
+                id="user-menu-button"
+                class="flex items-center focus:outline-none"
+              >
+                <img
+                  class="h-8 w-8 rounded-full object-cover"
+                  src="https://placekitten.com/100/100"
+                  alt="User avatar"
+                />
+              </button>
+              <div
+                id="user-menu"
+                class="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 hidden"
+              >
+                <a
+                  href="manager-dashboard.html"
+                  class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                  >Dashboard</a
+                >
+                <form method="post" action="logout.html">
+                  <button
+                    class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                  >
+                    Logout
+                  </button>
+                </form>
+              </div>
+            </div>
+            <div class="md:hidden ml-4">
+              <button
+                id="menu-toggle"
+                class="text-gray-600 hover:text-gray-800 focus:outline-none"
+              >
+                <svg
+                  class="h-6 w-6"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                  xmlns="http://www.w3.org/2000/svg"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M4 6h16M4 12h16m-7 6h7"
+                  ></path>
+                </svg>
+              </button>
+            </div>
+          </div>
+        </div>
+        <div id="mobile-menu" class="md:hidden hidden mt-4">
+          <a href="#" class="block py-2 text-gray-600 hover:text-gray-800"
+            >Dashboard</a
+          >
+          <a href="#" class="block py-2 text-gray-600 hover:text-gray-800"
+            >Tasks</a
+          >
+          <a href="#" class="block py-2 text-gray-600 hover:text-gray-800"
+            >Groups</a
+          >
+          <a href="#" class="block py-2 text-gray-600 hover:text-gray-800"
+            >Create Group</a
+          >
+        </div>
+      </nav>
+    </header>
+
+    <main>
+      <div class="container mx-auto px-6 py-4">
+        <p>Content goes here...</p>
+      </div>
+    </main>
+
+    <script>
+      document
+        .getElementById("menu-toggle")
+        .addEventListener("click", function () {
+          document.getElementById("mobile-menu").classList.toggle("hidden");
+        });
+
+      document
+        .getElementById("user-menu-button")
+        .addEventListener("click", function () {
+          document.getElementById("user-menu").classList.toggle("hidden");
+        });
+
+      // Close the dropdown when clicking outside
+      window.addEventListener("click", function (e) {
+        if (!document.getElementById("user-menu-button").contains(e.target)) {
+          document.getElementById("user-menu").classList.add("hidden");
+        }
+      });
+    </script>
+  </body>
+</html>
+
+12.3  Assign Role to User
+
+views.py:
+from django.shortcuts import redirect, render
+from django.contrib.auth.models import User
+from django.contrib.auth import login,logout,authenticate
+from users.forms import RegisterForm,CustomRegisterForm, AssignRoleForm
+from django.contrib import messages
+
+
+# Create your views here.
+def signup(request):
+    if request.method == 'GET':
+        form = CustomRegisterForm()
+    if request.method == 'POST':
+        form = CustomRegisterForm(request.POST)
+        if form.is_valid():
+            user = form.save(commit=False)  # Prevent immediate save to handle password hashing
+            user.set_password(form.cleaned_data['password1'])  # Hash the password
+            user.save()
+            messages.success(request, "Account Created Successfully")
+        else:
+            print("Form is not valid")
+            messages.error(request, "Account Creation failed")
+    return render(request, 'registration/register.html', {'form': form})
+
+def sign_in(request):
+    if request.method == "POST":
+        username = request.POST.get('username')
+        password = request.POST.get('password')
+        
+        user = authenticate(username=username,password=password)
+        
+        if user is not None:
+            login(request,user)
+            return redirect('home')
+        
+        else:
+            return render(request,'registration/signin.html', {'error': 'Invalid Username or Password'})
+        
+    return render(request, "registration/signin.html")
+
+def sign_out(request):
+    if request.method == 'POST':
+        logout(request)
+    return redirect('sign-in')
+
+def admin_dashboard(request):
+    users = User.objects.all()
+    return render(request, 'admin/dashboard.html', {'users' : users})
+def assign_role(request, user_id):
+    user = User.objects.get(id = user_id)
+    form = AssignRoleForm()
+    if request.method == 'POST':
+        form = AssignRoleForm(request.POST)
+        if form.is_valid():
+            role = form.cleaned_data.get('role')
+            user.groups.clear()
+            user.groups.add(role)
+            messages.success(request,f'{user.username} has been succefully assigned to the {role.name} role')
+            return redirect('admin-dashboard')
+    return render(request,'admin/assign_role.html',{'form': form})
+
+here now we are passing all users from admin_dashboard view to dashboard to show their info, 
+in assign_role view ,
+GET:
+Retrieves the user by user_id (e.g., /admin/1/assign-role/).
+Creates an empty AssignRoleForm and renders assign_role.html.
+POST:
+Binds POST data to AssignRoleForm.
+If valid:
+Gets the selected role (a Group object) from form.cleaned_data.
+Clears existing groups with user.groups.clear() (removing "User" or any other role).
+Adds the new role with user.groups.add(role).
+Shows a success message and redirects to admin-dashboard.
+If invalid: Redisplays the form with errors (though no explicit error handling yet).
+
+also added urls for these,
+from django.urls import path,include
+from users.views import signup,sign_in,sign_out,admin_dashboard,assign_role
+
+urlpatterns = [
+    path('sign-up/', signup, name='sign-up'),
+    path('sign-in/', sign_in, name='sign-in'),
+    path('sign-out/', sign_out, name='sign-out'),
+    path('admin/dashboard', admin_dashboard, name = 'admin-dashboard'),
+    path('admin/<int:user_id>/assign-role/', assign_role, name = 'assign-role'),
+]
+now forms.py:
+class AssignRoleForm(forms.Form):
+    role = forms.ModelChoiceField(
+        queryset=Group.objects.all(),
+        empty_label="Select a role"
+    )
+as we aree not dealing with anything related to model hence we are using Forms not ModelForm, so we fetch all available groups with a defaualt label of Select a role
+ we have added and updated the templates, 
+we added block content in dashboard to use navbar in all cases ,
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Document</title>
+    <link rel="stylesheet" href="{% static 'css/output.css' %}" />
+  </head>
+  <body>
+    <header class="bg-white shadow-md">
+      <nav class="container mx-auto px-6 py-3">
+        <div class="flex justify-between items-center">
+          <a href="index.html" class="text-xl font-bold text-gray-800"
+            >Taskify</a
+          >
+          <div class="hidden md:flex space-x-4">
+            <a
+              href="admin-dashboard.html"
+              class="text-gray-600 hover:text-gray-800"
+              >Dashboard</a
+            >
+            <a href="#" class="text-gray-600 hover:text-gray-800">Tasks</a>
+            <a href="group-list.html" class="text-gray-600 hover:text-gray-800"
+              >Groups</a
+            >
+            <a
+              href="create-group.html"
+              class="text-gray-600 hover:text-gray-800"
+              >Create Group</a
+            >
+          </div>
+          <div class="flex items-center">
+            <div class="relative">
+              <button
+                id="user-menu-button"
+                class="flex items-center focus:outline-none"
+              >
+                <img
+                  class="h-8 w-8 rounded-full object-cover"
+                  src="https://placekitten.com/100/100"
+                  alt="User avatar"
+                />
+              </button>
+              <div
+                id="user-menu"
+                class="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 hidden"
+              >
+                <a
+                  href="manager-dashboard.html"
+                  class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                  >Dashboard</a
+                >
+                <form method="post" action="logout.html">
+                  <button
+                    class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                  >
+                    Logout
+                  </button>
+                </form>
+              </div>
+            </div>
+            <div class="md:hidden ml-4">
+              <button
+                id="menu-toggle"
+                class="text-gray-600 hover:text-gray-800 focus:outline-none"
+              >
+                <svg
+                  class="h-6 w-6"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                  xmlns="http://www.w3.org/2000/svg"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M4 6h16M4 12h16m-7 6h7"
+                  ></path>
+                </svg>
+              </button>
+            </div>
+          </div>
+        </div>
+        <div id="mobile-menu" class="md:hidden hidden mt-4">
+          <a href="#" class="block py-2 text-gray-600 hover:text-gray-800"
+            >Dashboard</a
+          >
+          <a href="#" class="block py-2 text-gray-600 hover:text-gray-800"
+            >Tasks</a
+          >
+          <a href="#" class="block py-2 text-gray-600 hover:text-gray-800"
+            >Groups</a
+          >
+          <a href="#" class="block py-2 text-gray-600 hover:text-gray-800"
+            >Create Group</a
+          >
+        </div>
+      </nav>
+    </header>
+
+    <main>
+      <div class="container mx-auto px-6 py-4">
+        {% block content %}
+          {% include "admin/user_list.html" %}
+        {% endblock content %}
+      </div>
+    </main>
+
+    <script>
+      document
+        .getElementById("menu-toggle")
+        .addEventListener("click", function () {
+          document.getElementById("mobile-menu").classList.toggle("hidden");
+        });
+
+      document
+        .getElementById("user-menu-button")
+        .addEventListener("click", function () {
+          document.getElementById("user-menu").classList.toggle("hidden");
+        });
+
+      // Close the dropdown when clicking outside
+      window.addEventListener("click", function (e) {
+        if (!document.getElementById("user-menu-button").contains(e.target)) {
+          document.getElementById("user-menu").classList.add("hidden");
+        }
+      });
+    </script>
+  </body>
+</html>
+
+added user_list.html  to dynamically show all users, 
+<div class="container mx-auto p-6">
+  <div class="overflow-x-auto">
+    <table class="min-w-full bg-white shadow-md rounded-lg overflow-hidden">
+      <thead class="bg-gray-100">
+        <tr>
+          <th
+            class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+          >
+            Number
+          </th>
+          <th
+            class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+          >
+            Username
+          </th>
+          <th
+            class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+          >
+            Email
+          </th>
+          <th
+            class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+          >
+            User ID
+          </th>
+          <th
+            class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+          >
+            Current Role
+          </th>
+          <th
+            class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+          >
+            Action
+          </th>
+        </tr>
+      </thead>
+      <tbody class="divide-y divide-gray-200">
+        {% for user in users %}
+            <tr class="hover:bg-gray-50">
+            <td class="px-4 py-4 whitespace-nowrap">{{forloop.counter}}</td>
+            <td class="px-4 py-4 whitespace-nowrap">{{user.first_name}} {{user.last_name}}</td>
+            <td class="px-4 py-4 whitespace-nowrap">{{user.email}}</td>
+            <td class="px-4 py-4 whitespace-nowrap">{{user.id}}</td>
+            <td class="px-4 py-4 whitespace-nowrap">{{user.groups.first.name}}</td>
+            <td class="px-4 py-4 whitespace-nowrap">
+                <a
+                href="{% url 'assign-role' user.id %}"
+                class="bg-purple-400 hover:bg-purple-600 text-white font-bold py-2 px-4 rounded"
+                >
+                Change Role
+                </a>
+            </td>
+            </tr>
+        {% endfor %}
+        
+      </tbody>
+    </table>
+  </div>
+</div>
+
+and then to assign a role we need an interface so it is :
+{% extends "admin/dashboard.html" %}
+{% block content %}
+    <div class='w-1/2 mx-auto my-8'>
+        <ul>
+            {% for message in messages %}
+                <li class="bg-green-500 text-white px-1 py-2">{{message}}</li>
+            {% endfor %}
+        </ul>
+        <form method='POST'>
+            {% csrf_token %}
+            {{form}}
+            <button type="submit" class="mt-3 px-2 py-1 text-white bg-purple-500 rounded">Assign Role</button>
+        </form>
+    </div>
+{% endblock content %}
+
+it extens dashboard to show the navbar content
+
+12.4 Create Group
+
+forms.py:
+
+class CreateGroupForm(StyledFormMixin, forms.ModelForm):
+    permissions = forms.ModelMultipleChoiceField(
+        queryset=Permission.objects.all(),
+        widget=forms.CheckboxSelectMultiple,
+        required=False,
+        label="Assign Permission"
+    )
+    
+    class Meta:
+        model = Group
+        fields = ['name', 'permissions']
+
+here The permissions Field:
+Type: ModelMultipleChoiceField allows selecting multiple Permission objects.
+Queryset: Permission.objects.all() populates the field with all permissions in the database (e.g., "add_user", "change_task").
+Widget: CheckboxSelectMultiple renders as a list of checkboxes, letting admins pick multiple permissions.
+Label: "Assign Permission" appears next to the field in the template.
+required=False:
+What It Means: This tells Django that the permissions field is optional. The form will validate even if no permissions are selected. Without required=False, Django would require at least one permission to be checked, raising a validation error if none are selected.
+
+views.py:
+
+def create_group(request):
+    form = CreateGroupForm()
+    if request.method == "POST":
+        form = CreateGroupForm(request.POST)
+        if form.is_valid():
+            group = form.save()
+            messages.success(request, f'{group.name} has been created Succesfully')
+            return redirect('admin-dashboard')
+    return render(request, 'admin/create_group.html', {'form':form})
+
+GET:
+Initializes an empty CreateGroupForm and renders create_group.html.
+POST:
+Binds POST data to CreateGroupForm.
+If valid:
+Saves the form to create a new Group instance.
+Shows a success message with the group’s name and redirects to admin-dashboard.
+If invalid: Redisplays the form with errors (implicitly handled by the template).
+group = form.save():
+What It Does:
+Since CreateGroupForm is a ModelForm tied to the Group model, form.save() creates a new Group instance in the database based on the form’s cleaned data (name and permissions).
+
+then url  :     path('admin/create-group/', create_group, name = 'create-group')
+
+create_group.html:
+{% extends "admin/dashboard.html" %}
+{% block content %}
+    <div class='w-1/2 mx-auto my-8'>
+        <ul>
+            {% for message in messages %}
+                <li class="bg-green-500 text-white px-1 py-2">{{message}}</li>
+            {% endfor %}
+        </ul>
+        <form method='POST'>
+            {% csrf_token %}
+            {{form}}
+            <button type="submit" class="mt-3 px-2 py-1 text-white bg-purple-500 rounded">Create Group</button>
+        </form>
+    </div>
+{% endblock content %}
+
+thenwe need to pdate the dashboard path of create group
+<a
+              href="{% url 'create-group' %}"
+              class="text-gray-600 hover:text-gray-800"
+              >Create Group</a
+            >
+
+12. 5 Group List
+views.py:
+def group_list(request):
+    groups = Group.objects.all()
+    return render(request, 'admin/group_list.html', {'groups':groups})
+
+returns the group list
+
+urls.py:
+    path('admin/group-list/', group_list, name='group-list')
+
+group_list.html:
+{% extends "admin/dashboard.html" %}
+{% block content %}
+      <div class='w-2/3 mx-auto my-8'>
+            <h2 class="text-2xl font-bold mb-4">Groups and Permissions</h2>
+        <div class="overflow-x-auto">
+            <table class="table-auto w-full border-collapse border border-gray-300">
+            <thead>
+                <tr class="bg-gray-100">
+                <th class="border border-gray-300 px-4 py-2">Group Name</th>
+                <th class="border border-gray-300 px-4 py-2">Permissions</th>
+                </tr>
+            </thead>
+            <tbody>
+            {% for group in groups %}
+                    <tr class="odd:bg-white even:bg-gray-50">
+                    <td class="border border-gray-300 px-4 py-2 font-medium">
+                        {{group.name}}
+                    </td>
+                    <td class="border border-gray-300 px-4 py-2">
+                        <ul class="list-disc list-inside">
+                            {% for permission in group.permissions.all %}
+                                <li>{{permission.name}}</li>
+                            {% empty %}
+                                <span class="text-gray-500 italic">No permissions assigned</span>
+                            {% endfor %}
+                        </ul>
+                    </td>
+                    </tr>
+                {% endfor %}
+                
+            </tbody>
+            </table>
+        </div>
+      </div>
+
+{% endblock content %}
+
+here empty tag is used if there is no permission for certain groups then show a default message
+
+12.7 Enforcing Views to Check Permission
+
+okay now we have added restrictions for different views explain everything related those, at first users:
+views.py:
+from django.shortcuts import redirect, render, HttpResponse
+from django.contrib.auth.models import User, Group
+from django.contrib.auth.tokens import default_token_generator
+from django.contrib.auth import login,logout,authenticate
+from users.forms import RegisterForm,CustomRegisterForm, LoginForm, AssignRoleForm, CreateGroupForm
+from django.contrib import messages
+from django.contrib.auth.decorators import login_required,user_passes_test
+
+
+# Create your views here.
+
+def is_admin(user):
+    return user.groups.filter(name='Admin').exists()
+
+def signup(request):
+    if request.method == 'GET':
+        form = CustomRegisterForm()
+    if request.method == 'POST':
+        form = CustomRegisterForm(request.POST)
+        if form.is_valid():
+            user = form.save(commit=False)  # Prevent immediate save to handle password hashing
+            user.set_password(form.cleaned_data.get('password1'))  # Hash the password
+            user.is_active = False
+            user.save()
+            messages.success(request, "A confirmation mail sent, please check your email")
+            return redirect('sign-in')
+        else:
+            print("Form is not valid")
+            messages.error(request, "Account Creation failed")
+    return render(request, 'registration/register.html', {'form': form})
+
+def sign_in(request):
+    form = LoginForm()
+    if request.method == "POST":
+        form = LoginForm(data=request.POST)
+        if form.is_valid():
+            user = form.get_user()
+            login(request, user)
+            return redirect('home')
+    return render(request, "registration/signin.html", {'form': form})
+
+@login_required
+def sign_out(request):
+    if request.method == 'POST':
+        logout(request)
+    return redirect('sign-in')
+
+def activate_user(request, user_id, token):
+    try:
+        user = User.objects.get(id = user_id)
+        if default_token_generator.check_token(user, token):
+            user.is_active = True
+            user.save()
+            return redirect('sign-in')
+        else:
+            return HttpResponse('Invalid Id or token')
+    except user.DoesNotExist:
+        return HttpResponse('User not found')
+
+@user_passes_test(is_admin, login_url='no-permission')
+def admin_dashboard(request):
+    users = User.objects.all()
+    return render(request, 'admin/dashboard.html', {'users' : users})
+
+@user_passes_test(is_admin, login_url='no-permission')
+def assign_role(request, user_id):
+    user = User.objects.get(id = user_id)
+    form = AssignRoleForm()
+    if request.method == 'POST':
+        form = AssignRoleForm(request.POST)
+        if form.is_valid():
+            role = form.cleaned_data.get('role')
+            user.groups.clear()
+            user.groups.add(role)
+            messages.success(request,f'{user.username} has been succefully assigned to the {role.name} role')
+            return redirect('admin-dashboard')
+    return render(request,'admin/assign_role.html',{'form': form})
+
+@user_passes_test(is_admin, login_url='no-permission')
+def create_group(request):
+    form = CreateGroupForm()
+    if request.method == "POST":
+        form = CreateGroupForm(request.POST)
+        if form.is_valid():
+            group = form.save()
+            messages.success(request, f'{group.name} has been created Succesfully')
+            return redirect('admin-dashboard')
+    return render(request, 'admin/create_group.html', {'form':form})
+
+@user_passes_test(is_admin, login_url='no-permission')
+def group_list(request):
+    groups = Group.objects.all()
+    return render(request, 'admin/group_list.html', {'groups':groups})
+
+added codename in group_list.html:
+<ul class="list-disc list-inside">
+                            {% for permission in group.permissions.all %}
+                                <li>{{permission.name}} | {{permission.codename}}</li>
+                            {% empty %}
+                                <span class="text-gray-500 italic">No permissions assigned</span>
+                            {% endfor %}
+                        </ul>
+
+okay here we have helper function def is_admin(user):
+    return user.groups.filter(name='Admin').exists()
+ we willfound this in tasks for manager and employees too
+
+then the restrictions:
+@login_required is for restricting a user to use a functionality if they are not signed in 
+
+@user_passes_test(is_admin, login_url='no-permission')
+a user need to pass some functonalty test , here the user need to be an admin to use the functionality but if they fail then they wll be redirected to no-permission page whic is in core apps
+
+
+now a no-permission view is needed too so we have another app named core where global views that doesn't lies in specific apps, so core:
+views.py: 
+from django.shortcuts import render
+
+# Create your views here.
+def home(request):
+    #Work with db
+    #transform data
+    #Data pass
+    #http response// json response
+    return render(request,'home.html')
+
+def no_permission(request):
+    return render(request,'no_permission.html')
+
+urls.py in main root folder task_management:
+from django.contrib import admin
+from django.urls import path,include
+from debug_toolbar.toolbar import debug_toolbar_urls
+from core.views import home,no_permission
+
+
+urlpatterns = [
+    path("admin/", admin.site.urls),
+    path("", home, name='home'),
+    path("no-permission/", no_permission, name='no-permission'),
+    path("tasks/", include("tasks.urls")),
+    path("users/", include("users.urls"))
+] + debug_toolbar_urls()
+
+template in core:
+no_permisson.html:
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+<body>
+    <h2>You don't have any permission to access this page!</h2>
+</body>
+</html>
+
+okay now task app:
+views.py: 
+from django.shortcuts import render,redirect
+from django.http import HttpResponse
+from tasks.forms import TaskForm,TaskModelForm, TaskDetailModelForm
+from tasks.models import *
+from django.db.models import Q, Count, Max, Min
+from django.contrib import messages
+from django.contrib.auth.decorators import login_required,user_passes_test,permission_required
+
+# Create your views here.
+
+def is_manager(user):
+    return user.groups.filter(name='Manager').exists()
+
+def is_employee(user):
+    return user.groups.filter(name='Employee').exists()
+
+@user_passes_test(is_manager, login_url='no-permission')
+def manager_dashboard(request):
+    type = request.GET.get('type','all')
+    base_query=Task.objects.select_related('details').prefetch_related('assigned_to')
+    if type=='completed':
+        tasks=base_query.filter(status='COMPLETED')
+    elif type=='in_progress':
+        tasks=base_query.filter(status='IN_PROGRESS')
+    elif type=='pending':
+        tasks=base_query.filter(status='PENDING')
+    else:
+        tasks=base_query.all()
+    counts = Task.objects.aggregate(
+        total_task=Count('id'),
+        completed_task=Count('id', filter=Q(status='COMPLETED')),
+        in_progress_task=Count('id', filter=Q(status='IN_PROGRESS')),
+        pending_task=Count('id', filter=Q(status='PENDING'))
+    )
+    
+    context = {
+        "tasks":tasks,
+        "counts":counts
+    }
+    return render(request, "dashboard/manager_dashboard.html",context=context)
+@user_passes_test(is_employee, login_url='no-permission')
+def employee_dashboard(request):
+    return render(request, "dashboard/user_dashboard.html")
+
+@login_required
+@permission_required("tasks.add_task", login_url='no-permission')
+def create_task(request):
+    task_form = TaskModelForm()
+    taskdetail_form = TaskDetailModelForm()
+    if request.method == "POST":
+        task_form = TaskModelForm(request.POST)
+        taskdetail_form = TaskDetailModelForm(request.POST)
+        if task_form.is_valid() and taskdetail_form.is_valid():
+            """For Django model Form"""
+            task = task_form.save()
+            taskdetail = taskdetail_form.save(commit=False)
+            taskdetail.task = task
+            taskdetail.save()
+            messages.success(request, "Task Created Successfully")
+            return redirect('create_task')                
+    context = {
+        "task_form" : task_form,
+        "taskdetail_form" : taskdetail_form
+    }
+    return render(request,'task_form.html', context)
+
+@login_required
+@permission_required("tasks.change_task", login_url='no-permission')
+def update_task(request,id):
+    task = Task.objects.get(id=id)
+    task_form = TaskModelForm(instance=task)
+    
+    if task.details:
+        taskdetail_form = TaskDetailModelForm(instance=task.details)
+        
+    if request.method == "POST":
+        task_form = TaskModelForm(request.POST, instance=task)
+        taskdetail_form = TaskDetailModelForm(request.POST, instance=task.details)
+        if task_form.is_valid() and taskdetail_form.is_valid():
+            """For Django model Form"""
+            task = task_form.save()
+            taskdetail = taskdetail_form.save(commit=False)
+            taskdetail.task = task
+            taskdetail.save()
+            
+            messages.success(request, "Task Updated Successfully")
+            return redirect('update_task',id)                
+    context = {
+        "task_form" : task_form,
+        "taskdetail_form" : taskdetail_form
+    }
+    return render(request,'task_form.html', context)
+
+@login_required
+@permission_required("tasks.delete_task", login_url='no-permission')
+def delete_task(request,id):
+    if request.method == "POST":
+        task = Task.objects.get(id=id)
+        task.delete()
+        messages.success(request,"Task Deleted Successfully")
+        return redirect('manager_dashboard')
+    messages.error(request,"Something went Wrong")
+    redirect("manager_dashboard")
+
+@login_required
+@permission_required("tasks.view_task", login_url='no-permission')
+def view_task(request):
+    project2 = Project.objects.annotate(task_num = Count("task"))
+    return render(request, "view_task.html", {"project2":project2})
+
+urls.py:
+from django.urls import path
+from tasks.views import *
+
+urlpatterns = [
+    # path('show_task/<int:id>', show_specific_task) #jei datatype nibo sheita lekhte hbe routes ey
+    path('manager_dashboard/', manager_dashboard, name="manager_dashboard"),
+    path('user_dashboard/', employee_dashboard),
+    path('create_task/', create_task, name='create_task'),
+    path('view_tasks/', view_task),
+    path('update_task/<int:id>', update_task, name='update_task'),
+    path('delete_task/<int:id>', delete_task, name='delete_task')
+]
+
+@login_required
+@permission_required("tasks.<action>_task", login_url='no-permission')
+create_task: "tasks.add_task"
+update_task: "tasks.change_task"
+delete_task: "tasks.delete_task"
+view_task: "tasks.view_task"
+What It Does:
+@login_required: Ensures the user is authenticated.
+@permission_required: Checks if the user has the specific permission (e.g., add_task) tied to the Task model.
+If either fails, redirects to /no-permission/.
+
+here tasks.<action>_task action is the codename of the permission
