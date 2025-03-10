@@ -1,11 +1,11 @@
 from django.shortcuts import redirect, render, HttpResponse
 from django.contrib.auth.models import User, Group
 from django.contrib.auth.tokens import default_token_generator
-from django.contrib.auth import login,logout,authenticate
-from users.forms import RegisterForm,CustomRegisterForm, LoginForm, AssignRoleForm, CreateGroupForm
+from django.contrib.auth import login,logout
+from users.forms import CustomRegisterForm, LoginForm, AssignRoleForm, CreateGroupForm
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required,user_passes_test
-
+from django.db.models import Prefetch
 
 # Create your views here.
 
@@ -59,8 +59,19 @@ def activate_user(request, user_id, token):
 
 @user_passes_test(is_admin, login_url='no-permission')
 def admin_dashboard(request):
-    users = User.objects.all()
-    return render(request, 'admin/dashboard.html', {'users' : users})
+    users = User.objects.prefetch_related(
+        Prefetch('groups', queryset=Group.objects.all(), to_attr='all_groups')
+    ).all()
+
+    print(users)
+
+    for user in users:
+        if user.all_groups:
+            user.group_name = user.all_groups[0].name
+        else:
+            user.group_name = 'No Group Assigned'
+    return render(request, 'admin/dashboard.html', {"users": users})
+
 
 @user_passes_test(is_admin, login_url='no-permission')
 def assign_role(request, user_id):
@@ -89,5 +100,5 @@ def create_group(request):
 
 @user_passes_test(is_admin, login_url='no-permission')
 def group_list(request):
-    groups = Group.objects.all()
-    return render(request, 'admin/group_list.html', {'groups':groups})
+    groups = Group.objects.prefetch_related('permissions').all()
+    return render(request, 'admin/group_list.html', {'groups': groups})

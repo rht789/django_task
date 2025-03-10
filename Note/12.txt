@@ -904,3 +904,140 @@ What It Does:
 If either fails, redirects to /no-permission/.
 
 here tasks.<action>_task action is the codename of the permission
+
+12.8 SQL optimization
+
+changes in views.py:
+from django.shortcuts import redirect, render, HttpResponse
+from django.contrib.auth.models import User, Group
+from django.contrib.auth.tokens import default_token_generator
+from django.contrib.auth import login,logout
+from users.forms import CustomRegisterForm, LoginForm, AssignRoleForm, CreateGroupForm
+from django.contrib import messages
+from django.contrib.auth.decorators import login_required,user_passes_test
+from django.db.models import Prefetch
+
+# Create your views here.
+
+def is_admin(user):
+    return user.groups.filter(name='Admin').exists()
+
+def signup(request):
+    if request.method == 'GET':
+        form = CustomRegisterForm()
+    if request.method == 'POST':
+        form = CustomRegisterForm(request.POST)
+        if form.is_valid():
+            user = form.save(commit=False)  # Prevent immediate save to handle password hashing
+            user.set_password(form.cleaned_data.get('password1'))  # Hash the password
+            user.is_active = False
+            user.save()
+            messages.success(request, "A confirmation mail sent, please check your email")
+            return redirect('sign-in')
+        else:
+            print("Form is not valid")
+            messages.error(request, "Account Creation failed")
+    return render(request, 'registration/register.html', {'form': form})
+
+def sign_in(request):
+    form = LoginForm()
+    if request.method == "POST":
+        form = LoginForm(data=request.POST)
+        if form.is_valid():
+            user = form.get_user()
+            login(request, user)
+            return redirect('home')
+    return render(request, "registration/signin.html", {'form': form})
+
+@login_required
+def sign_out(request):
+    if request.method == 'POST':
+        logout(request)
+    return redirect('sign-in')
+
+def activate_user(request, user_id, token):
+    try:
+        user = User.objects.get(id = user_id)
+        if default_token_generator.check_token(user, token):
+            user.is_active = True
+            user.save()
+            return redirect('sign-in')
+        else:
+            return HttpResponse('Invalid Id or token')
+    except user.DoesNotExist:
+        return HttpResponse('User not found')
+
+@user_passes_test(is_admin, login_url='no-permission')
+def admin_dashboard(request):
+    users = User.objects.prefetch_related(
+        Prefetch('groups', queryset=Group.objects.all(), to_attr='all_groups')
+    ).all()
+
+    print(users)
+
+    for user in users:
+        if user.all_groups:
+            user.group_name = user.all_groups[0].name
+        else:
+            user.group_name = 'No Group Assigned'
+    return render(request, 'admin/dashboard.html', {"users": users})
+
+
+@user_passes_test(is_admin, login_url='no-permission')
+def assign_role(request, user_id):
+    user = User.objects.get(id = user_id)
+    form = AssignRoleForm()
+    if request.method == 'POST':
+        form = AssignRoleForm(request.POST)
+        if form.is_valid():
+            role = form.cleaned_data.get('role')
+            user.groups.clear()
+            user.groups.add(role)
+            messages.success(request,f'{user.username} has been succefully assigned to the {role.name} role')
+            return redirect('admin-dashboard')
+    return render(request,'admin/assign_role.html',{'form': form})
+
+@user_passes_test(is_admin, login_url='no-permission')
+def create_group(request):
+    form = CreateGroupForm()
+    if request.method == "POST":
+        form = CreateGroupForm(request.POST)
+        if form.is_valid():
+            group = form.save()
+            messages.success(request, f'{group.name} has been created Succesfully')
+            return redirect('admin-dashboard')
+    return render(request, 'admin/create_group.html', {'form':form})
+
+@user_passes_test(is_admin, login_url='no-permission')
+def group_list(request):
+    groups = Group.objects.prefetch_related('permissions').all()
+    return render(request, 'admin/group_list.html', {'groups': groups})
+
+What Changed:
+Query Optimization:
+Replaced User.objects.all() with a prefetch_related call.
+Used Prefetch to fetch the groups relationship, storing it in a custom attribute all_groups.
+Post-Processing:
+Added a loop to dynamically attach a group_name attribute to each User object, defaulting to "No Group Assigned" if no groups exist.
+How It Optimizes SQL:
+Before: User.objects.all() fetched all users but didn’t preload their groups. In the template (user_list.html), accessing {{ user.groups.first.name }} triggered a separate SQL query per user to fetch their groups (N+1 query problem).
+Example: 10 users = 1 query for users + 10 queries for groups = 11 queries.
+After:
+prefetch_related with Prefetch preloads all related groups in a single additional query.
+Prefetch('groups', ..., to_attr='all_groups'):
+'groups': Targets the ManyToManyField on User.
+queryset=Group.objects.all(): Specifies what to fetch (all groups, no filtering here).
+to_attr='all_groups': Stores the result in user.all_groups instead of the default groups manager.
+Total queries: 2 (1 for users, 1 for all related groups), regardless of user count.
+Loop: Assigning group_name in Python avoids template-level queries (e.g., user.groups.first), further reducing SQL calls.
+
+for group list:
+What Changed:
+Added prefetch_related('permissions') to preload the permissions ManyToManyField.
+How It Optimizes SQL:
+Before: Group.objects.all() fetched all groups, but {{ permission.name }} in group_list.html (via group.permissions.all) triggered a separate query per group to fetch permissions.
+Example: 5 groups = 1 query for groups + 5 queries for permissions = 6 queries.
+After:
+prefetch_related('permissions') fetches all related Permission objects in one additional query.
+Total queries: 2 (1 for groups, 1 for all permissions), regardless of group count.
+No Post-Processing: Unlike admin_dashboard, the template handles the display directly with group.permissions.all(), which now uses the prefetched data.
