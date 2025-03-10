@@ -1,51 +1,7 @@
-{% load static %}
-<!DOCTYPE html>
-<html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>{% block title %}{% endblock title %}</title>
-    <script
-      src="https://kit.fontawesome.com/a076d05399.js"
-      crossorigin="anonymous"
-    ></script>
-    <link rel="stylesheet" href="{% static "css/output.css" %}">
-  </head>
-
-  
-  <body class="bg-gray-50 p-6">
-    <div class="mx-auto max-w-[1400px]">
-      <!-- Header -->
-      <header class="flex items-center justify-between mb-8">
-        <h1 class="text-2xl font-semibold">Dashboard</h1>
-        <div class="flex items-center gap-4">
-          <button class="relative rounded-full p-2 hover:bg-gray-100">
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke-width="1.5"
-              stroke="currentColor"
-              class="size-6"
-            >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                d="M14.857 17.082a23.848 23.848 0 0 0 5.454-1.31A8.967 8.967 0 0 1 18 9.75V9A6 6 0 0 0 6 9v.75a8.967 8.967 0 0 1-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 0 1-5.714 0m5.714 0a3 3 0 1 1-5.714 0"
-              />
-            </svg>
-          </button>
-          <button
-            class="h-10 w-10 rounded-full bg-blue-500 font-semibold text-white"
-          >
-            B
-          </button>
-        </div>
-      </header>
-
-      <main>
-        <!-- stats grid -->
-        <div class="grid grid-cols-4 gap-6">
+{% extends "base.html" %}
+{% block content %}
+<div class="w-[1470px] mx-auto my-8 bg-gray-100">
+  <div class="grid grid-cols-4 gap-6">
           <!-- Total Task -->
            <a href="{% url 'manager_dashboard' %}">
           <div class="bg-white rounded-xl p-6 shadow-sm">
@@ -167,7 +123,7 @@
           </div>
           </a>
         </div>
-        <div>
+        <div class="mb-4">
           {% if messages %}
               {% for message in messages %}
                   <div class="px-2 py-1 {% if message.tags == 'success' %}bg-green-500{% endif %} {% if message.tags == 'error' %}bg-red-500{% endif %}">{{message}}</div>
@@ -175,8 +131,8 @@
           {% endif %}
         </div>
         {% block tasks %} {% endblock tasks %}
-      </main>
-    </div>
-    {% include "footer.html" %}
-  </body>
-</html>
+      </div>
+</div>
+{% endblock content %}
+        
+

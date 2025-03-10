@@ -632,6 +632,14 @@ video {
   right: 0px;
 }
 
+.m-4 {
+  margin: 1rem;
+}
+
+.m-8 {
+  margin: 2rem;
+}
+
 .mx-auto {
   margin-left: auto;
   margin-right: auto;
@@ -794,6 +802,18 @@ video {
 
 .w-\[1450px\] {
   width: 1450px;
+}
+
+.w-\[1400\] {
+  width: 1400;
+}
+
+.w-\[1400px\] {
+  width: 1400px;
+}
+
+.w-\[1470px\] {
+  width: 1470px;
 }
 
 .min-w-full {

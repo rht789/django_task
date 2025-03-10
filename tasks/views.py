@@ -7,6 +7,8 @@ from django.contrib import messages
 from django.contrib.auth.decorators import login_required,user_passes_test,permission_required
 
 # Create your views here.
+def is_admin(user):
+    return user.groups.filter(name='Admin').exists()
 
 def is_manager(user):
     return user.groups.filter(name='Manager').exists()
@@ -38,6 +40,7 @@ def manager_dashboard(request):
         "counts":counts
     }
     return render(request, "dashboard/manager_dashboard.html",context=context)
+
 @user_passes_test(is_employee, login_url='no-permission')
 def employee_dashboard(request):
     return render(request, "dashboard/user_dashboard.html")
