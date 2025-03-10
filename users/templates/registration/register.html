@@ -1,24 +1,6 @@
-{% load static %}
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Register</title>
-    <link rel="stylesheet" href="{% static "css/output.css" %}">
-
-</head>
-<body>
-    <div class="w-1/2 mx-auto mt-8">
-        <h2>Welcome to Authentication System</h2>
-    <div>
-        {% if messages %}
-            {% for message in messages %}
-                <p class="{% if message.tags == "success" %}bg-green-600 text-white py-4 {% else %}bg-red-600 text-white py-4{% endif %} ">{{ message }}</p>
-            {% endfor %}
-        {% endif %}
-    </div>
-    <div>
+{% extends "base.html" %}
+{% block content %}
+    <div class='w-1/2 mx-auto my-9'>
         {% if form.non_field_errors %}
             {% for error in form.non_field_errors %}
                 {{ error }}
@@ -27,29 +9,20 @@
         <form action="" method="POST">
             {% csrf_token %}
             {% for field in form %}
-                <p>
-                    {% if field.label == 'Password1' %}
-                        <label for="{{ field.id_for_label }}">Password</label>
-                        {{ field }}
-                    {% elif field.label == 'Password2' %}
-                        <label for="{{ field.id_for_label }}">Confirm Password</label>
-                        {{ field }}
-                    {% else %}
-                        <label for="{{ field.id_for_label }}">{{ field.label }}</label>
-                        {{ field }}
-                    {% endif %}
+               <p>
+                    <label for="{{ field.id_for_label }}"> {{field.label}} </label>
+                    {{ field }}
+
                     {% if field.errors %}
-                        <ul>
-                            {% for error in field.errors %}
-                                <li>{{ error }}</li>
-                            {% endfor %}
-                        </ul>
+                            <ul>
+                                {% for error in field.errors %}
+                                <li>{{error}}</li>
+                                {% endfor %}
+                            </ul>
                     {% endif %}
-                </p>
+               </p>
             {% endfor %}
-            <button type="submit" class="bg-rose-500 text-white mt-2 px-3 py-2 rounded-md">Sign Up</button>
+            <button class="bg-purple-500 px-2 py-1 rounded text-white mt-3" type="submit">Sign Up</button>
         </form>
     </div>
-    </div>
-</body>
-</html>
+    {% endblock content %}
