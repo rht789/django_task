@@ -36,6 +36,7 @@ class TaskDetail(models.Model):
     priority = models.CharField(
         max_length=1,choices=PRIORITY_OPTIONS,default=LOW
     )
+    assets = models.ImageField(upload_to='tasks_asset', blank=True, null=True)
     notes = models.TextField(blank=True,null=True)
     
     def __str__(self):

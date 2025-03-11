@@ -75,7 +75,7 @@
                         <div
                         class="w-12 h-12 bg-blue-600 rounded-full flex items-center justify-center text-white"
                         >
-                        {{emp.first_name|slice:':1'}}
+                        {{emp.first_name|slice:':1'}}{{emp.last_name|slice:":1"}}
                         </div>
                         <div>
                             <div class="font-semibold">{{emp.first_name}} {{emp.last_name}}</div>
@@ -117,7 +117,7 @@
           <h2 class="text-xl font-bold mb-4">ASSETS</h2>
           <div class="space-y-4">
             <img
-              src={{task.details.asset.url}}
+              src={{task.details.assets.url}}
               alt="Task Manager App Screenshot 1"
               class="w-full rounded-lg"
             />

@@ -56,7 +56,7 @@ def create_task(request):
     taskdetail_form = TaskDetailModelForm()
     if request.method == "POST":
         task_form = TaskModelForm(request.POST)
-        taskdetail_form = TaskDetailModelForm(request.POST)
+        taskdetail_form = TaskDetailModelForm(request.POST, request.FILES)
         if task_form.is_valid() and taskdetail_form.is_valid():
             """For Django model Form"""
             task = task_form.save()
