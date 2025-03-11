@@ -1,0 +1,545 @@
+13.1 : Homepage and dynamic navbar
+
+so we have updated the homepage and navbar to include in all pages and also authenticated and non-authenticated states for navbar, in core apps templates:
+base.html:
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>{% block title %}{% endblock title %}</title>
+    <script
+      src="https://kit.fontawesome.com/a076d05399.js"
+      crossorigin="anonymous"
+    ></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&family=Noto+Sans+Bengali:wght@100..900&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="{% static 'css/output.css' %}">
+    <style>
+      body {
+        font-family: "Inter", sans-serif;
+      }
+    </style>
+  </head>
+  <body class="font-sans bg-gray-100">
+    {% if request.user.is_authenticated %}
+        {% include "logged_nav.html" %}
+    {% else %}
+        {% include "non_logged_nav.html" %}
+    {% endif %}
+    <main>
+      {% block content %}
+      
+      {% endblock content %}
+    </main>
+
+    <footer class="bg-gray-800 text-white py-12">
+      <div class="container mx-auto px-6">
+        <div class="flex flex-wrap justify-between">
+          <div class="w-full md:w-1/4 mb-8 md:mb-0">
+            <h3 class="text-lg font-semibold mb-4">TaskMaster</h3>
+            <p class="text-gray-400">
+              Empowering teams with efficient task management solutions.
+            </p>
+          </div>
+          <div class="w-full md:w-1/4 mb-8 md:mb-0">
+            <h4 class="text-lg font-semibold mb-4">Quick Links</h4>
+            <ul class="text-gray-400 space-y-2">
+              <li><a href="#" class="hover:text-white">Home</a></li>
+              <li><a href="#" class="hover:text-white">Features</a></li>
+              <li><a href="#" class="hover:text-white">Pricing</a></li>
+              <li><a href="#" class="hover:text-white">Contact</a></li>
+            </ul>
+          </div>
+          <div class="w-full md:w-1/4 mb-8 md:mb-0">
+            <h4 class="text-lg font-semibold mb-4">Connect</h4>
+            <ul class="text-gray-400 space-y-2">
+              <li><a href="#" class="hover:text-white">Twitter</a></li>
+              <li><a href="#" class="hover:text-white">LinkedIn</a></li>
+              <li><a href="#" class="hover:text-white">Facebook</a></li>
+            </ul>
+          </div>
+          <div class="w-full md:w-1/4">
+            <h4 class="text-lg font-semibold mb-4">Newsletter</h4>
+            <form class="flex">
+              <input
+                type="email"
+                placeholder="Your email"
+                class="w-full px-3 py-2 text-gray-700 bg-gray-200 rounded-l-md focus:outline-none"
+                required
+              />
+              <button
+                type="submit"
+                class="bg-purple-500 text-white px-4 py-2 rounded-r-md hover:bg-purple-600 transition duration-300"
+              >
+                Subscribe
+              </button>
+            </form>
+          </div>
+        </div>
+        <div
+          class="border-t border-gray-700 mt-12 pt-8 text-sm text-center text-gray-400"
+        >
+          &copy; 2023 TaskMaster. All rights reserved.
+        </div>
+      </div>
+    </footer>
+
+    <script>
+        document
+          .getElementById("menu-toggle")
+          .addEventListener("click", function () {
+            document.getElementById("mobile-menu").classList.toggle("hidden");
+          });
+  
+        document
+          .getElementById("user-menu-button")
+          .addEventListener("click", function () {
+            document.getElementById("user-menu").classList.toggle("hidden");
+          });
+  
+        // Close the dropdown when clicking outside
+        window.addEventListener("click", function (e) {
+          if (!document.getElementById("user-menu-button").contains(e.target)) {
+            document.getElementById("user-menu").classList.add("hidden");
+          }
+        });
+      </script>
+  </body>
+</html>
+
+home.html:
+{% extends "base.html" %}
+{% block content %}
+<!-- Hero Section -->
+<section class="bg-purple-600 text-white py-32 md:py-40">
+    <div class="container mx-auto px-6 text-center">
+      <h1 class="text-4xl md:text-5xl font-bold mb-6">
+        Streamline Your Workflow with TaskMaster
+      </h1>
+      <p class="text-xl mb-12">
+        Empower your team with our intuitive task management solution
+      </p>
+      <a
+        href="#"
+        class="bg-white text-purple-600 px-8 py-4 rounded-md font-semibold text-lg hover:bg-gray-100 transition duration-300"
+        >Get Started</a
+      >
+    </div>
+  </section>
+
+  <!-- Features Section -->
+  <section class="py-24 md:py-32">
+    <div class="container mx-auto px-6">
+      <h2 class="text-3xl font-bold text-center mb-16">
+        Tailored for Every Role
+      </h2>
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-12">
+        <!-- Admin Card -->
+        <div class="bg-white rounded-lg shadow-md p-8">
+          <h3 class="text-2xl font-semibold mb-6">Admin</h3>
+          <ul class="list-disc list-inside text-gray-600 space-y-3">
+            <li>Manage user roles and permissions</li>
+            <li>Generate comprehensive reports</li>
+            <li>Configure system-wide settings</li>
+            <li>Monitor team performance</li>
+          </ul>
+        </div>
+        <!-- Manager Card -->
+        <div class="bg-white rounded-lg shadow-md p-8">
+          <h3 class="text-2xl font-semibold mb-6">Manager</h3>
+          <ul class="list-disc list-inside text-gray-600 space-y-3">
+            <li>Create and assign tasks to employees</li>
+            <li>Track project progress in real-time</li>
+            <li>Set deadlines and priorities</li>
+            <li>Generate team performance reports</li>
+          </ul>
+        </div>
+        <!-- Employee Card -->
+        <div class="bg-white rounded-lg shadow-md p-8">
+          <h3 class="text-2xl font-semibold mb-6">Employee</h3>
+          <ul class="list-disc list-inside text-gray-600 space-y-3">
+            <li>View and manage assigned tasks</li>
+            <li>Collaborate with team members</li>
+            <li>Update task status and progress</li>
+            <li>Track personal productivity</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Call to Action -->
+  <section class="bg-gray-200 py-24 md:py-32">
+    <div class="container mx-auto px-6 text-center">
+      <h2 class="text-3xl font-bold mb-6">
+        Ready to Boost Your Team's Productivity?
+      </h2>
+      <p class="text-xl mb-12">
+        Join thousands of organizations already using TaskMaster
+      </p>
+      <a
+        href="#"
+        class="bg-purple-500 text-white px-8 py-4 rounded-md font-semibold text-lg hover:bg-purple-600 transition duration-300"
+        >Start Free Trial</a
+      >
+    </div>
+  </section>
+  {% endblock %}
+
+logged_nav.html:
+<header class="bg-white shadow-md">
+    <nav class="container mx-auto px-6 py-3">
+      <div class="flex justify-between items-center">
+        <a href="index.html" class="text-xl font-bold text-gray-800"
+          >Taskify</a
+        >
+        <div class="hidden md:flex space-x-4">
+          <a
+            href="{% url 'manager_dashboard' %}"
+            class="text-gray-600 hover:text-gray-800"
+            >Dashboard</a
+          >
+          <a href="#" class="text-gray-600 hover:text-gray-800">Tasks</a>
+          <a href="{% url 'group-list' %}" class="text-gray-600 hover:text-gray-800"
+            >Tasks</a
+          >
+          <a
+            href="{% url 'create_task' %}"
+            class="text-gray-600 hover:text-gray-800"
+            >Create Task</a
+          >
+        </div>
+        <div class="flex items-center">
+          <div class="relative">
+            <button
+              id="user-menu-button"
+              class="flex items-center focus:outline-none"
+            >
+              <img
+                class="h-8 w-8 rounded-full object-cover"
+                src="https://placekitten.com/100/100"
+                alt="User avatar"
+              />
+            </button>
+            <div
+              id="user-menu"
+              class="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 hidden"
+            >
+              <a
+                href="{% url 'admin-dashboard' %}"
+                class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                >Dashboard</a
+              >
+              <form method="post" action="{% url 'sign-out' %}">
+                  {% csrf_token %}
+                <button
+                  class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                >
+                  Logout
+                </button>
+              </form>
+            </div>
+          </div>
+          <div class="md:hidden ml-4">
+            <button
+              id="menu-toggle"
+              class="text-gray-600 hover:text-gray-800 focus:outline-none"
+            >
+              <svg
+                class="h-6 w-6"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+                xmlns="http://www.w3.org/2000/svg"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M4 6h16M4 12h16m-7 6h7"
+                ></path>
+              </svg>
+            </button>
+          </div>
+        </div>
+      </div>
+      <div id="mobile-menu" class="md:hidden hidden mt-4">
+        <a href="#" class="block py-2 text-gray-600 hover:text-gray-800"
+          >Dashboard</a
+        >
+        <a href="#" class="block py-2 text-gray-600 hover:text-gray-800"
+          >Tasks</a
+        >
+        <a href="#" class="block py-2 text-gray-600 hover:text-gray-800"
+          >Groups</a
+        >
+        <a href="#" class="block py-2 text-gray-600 hover:text-gray-800"
+          >Create Group</a
+        >
+      </div>
+    </nav>
+  </header>
+
+non_logged_nav.html:
+<header class="bg-white shadow-md">
+    <nav class="container mx-auto px-6 py-3">
+      <div class="flex justify-between items-center">
+        <div class="text-xl font-bold text-gray-800">TaskMaster</div>
+        <div class="hidden md:flex space-x-4">
+          <a href="#" class="text-gray-600 hover:text-gray-800">Features</a>
+          <a href="#" class="text-gray-600 hover:text-gray-800">Pricing</a>
+          <a href="#" class="text-gray-600 hover:text-gray-800">About</a>
+          <a href="#" class="text-gray-600 hover:text-gray-800">Contact</a>
+        </div>
+        <div class="md:hidden">
+          <button
+            id="menu-toggle"
+            class="text-gray-600 hover:text-gray-800 focus:outline-none"
+          >
+            <svg
+              class="h-6 w-6"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M4 6h16M4 12h16m-7 6h7"
+              ></path>
+            </svg>
+          </button>
+        </div>
+        <div class="flex gap-1">
+          <a
+            href="{% url 'sign-in' %}"
+            class="hidden md:block bg-purple-500 text-white px-4 py-2 rounded-md hover:bg-purple-600 transition duration-300"
+            >Sign In</a
+          >
+          <a
+            href="{% url 'sign-up' %}"
+            class="hidden md:block text-purple-500 bg-white border border-purple-500 px-4 py-2 rounded-md hover:bg-purple-600 hover:text-white transition duration-300"
+            >Sign Up</a
+          >
+        </div>
+      </div>
+      <div id="mobile-menu" class="md:hidden hidden mt-4">
+        <a href="#" class="block py-2 text-gray-600 hover:text-gray-800"
+          >Features</a
+        >
+        <a href="#" class="block py-2 text-gray-600 hover:text-gray-800"
+          >Pricing</a
+        >
+        <a href="#" class="block py-2 text-gray-600 hover:text-gray-800"
+          >About</a
+        >
+        <a href="#" class="block py-2 text-gray-600 hover:text-gray-800"
+          >Contact</a
+        >
+        <a href="#" class="block py-2 text-gray-600 hover:text-gray-800"
+          >Sign In</a
+        >
+        <a href="#" class="block py-2 text-gray-600 hover:text-gray-800"
+          >Sign Up</a
+        >
+      </div>
+    </nav>
+  </header>
+
+in users app:
+register.html:
+{% extends "base.html" %}
+{% block content %}
+    <div class='w-1/2 mx-auto my-9'>
+        {% if form.non_field_errors %}
+            {% for error in form.non_field_errors %}
+                {{ error }}
+            {% endfor %}
+        {% endif %}
+        <form action="" method="POST">
+            {% csrf_token %}
+            {% for field in form %}
+               <p>
+                    <label for="{{ field.id_for_label }}"> {{field.label}} </label>
+                    {{ field }}
+
+                    {% if field.errors %}
+                            <ul>
+                                {% for error in field.errors %}
+                                <li>{{error}}</li>
+                                {% endfor %}
+                            </ul>
+                    {% endif %}
+               </p>
+            {% endfor %}
+            <button class="bg-purple-500 px-2 py-1 rounded text-white mt-3" type="submit">Sign Up</button>
+        </form>
+    </div>
+    {% endblock content %}
+
+signin.html:
+{% extends "base.html" %}
+{% block content %}
+    <div class='mx-auto w-1/2 my-9'>
+        {% if messages %}
+            {% for message in messages %}
+                <div class="px-2 py-1 {% if message.tags == 'success' %}bg-green-500{% endif %} ">{{message}}</div>
+            {% endfor %}
+        {% endif %}
+        <form method='POST'>
+            {% csrf_token %}
+            {{ form }}
+            <button class='bg-purple-500 px-2 py-1 rounded text-white mt-3' type="submit">Sign In</button>
+        </form>
+    </div>
+{% endblock content %}
+
+so we just added some thing and separated some previous page for adding dynamic interaction
+
+13.2 Multilevel Template Inheritance
+so we will inherite from base.html to dashboard.html in task app:
+{% extends "base.html" %}
+{% block content %}
+<div class="w-[1470px] mx-auto my-8 bg-gray-100">
+  <div class="grid grid-cols-4 gap-6">
+          <!-- Total Task -->
+           <a href="{% url 'manager_dashboard' %}">
+          <div class="bg-white rounded-xl p-6 shadow-sm">
+            <h3 class="text-sm font-medium text-gray-500 mb-4">Total Task</h3>
+            <div class="flex justify-between items-start">
+              <div>
+                <p class="text-3xl font-semibold mb-1">{{counts.total_task}}</p>
+                <p class="text-gray-500 text-sm">111 Last Month</p>
+              </div>
+              <div class="bg-blue-100 p-3 rounded-full">
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke-width="1.5"
+                  stroke="currentColor"
+                  class="w-6 h-6 text-blue-600 font-semibold"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M15.666 3.888A2.25 2.25 0 0 0 13.5 2.25h-3c-1.03 0-1.9.693-2.166 1.638m7.332 0c.055.194.084.4.084.612v0a.75.75 0 0 1-.75.75H9a.75.75 0 0 1-.75-.75v0c0-.212.03-.418.084-.612m7.332 0c.646.049 1.288.11 1.927.184 1.1.128 1.907 1.077 1.907 2.185V19.5a2.25 2.25 0 0 1-2.25 2.25H6.75A2.25 2.25 0 0 1 4.5 19.5V6.257c0-1.108.806-2.057 1.907-2.185a48.208 48.208 0 0 1 1.927-.184"
+                  />
+                </svg>
+              </div>
+            </div>
+          </div>
+          </a>
+          <!-- COmplete Task  -->
+           <a href="{% url 'manager_dashboard' %}?type=completed">
+            <div class="bg-white rounded-xl p-6 shadow-sm">
+              <h3 class="text-sm font-medium text-gray-500 mb-4">
+                Completed Task
+              </h3>
+              <div class="flex justify-between items-start">
+                <div>
+                  <p class="text-3xl font-semibold mb-1">{{counts.completed_task}}</p>
+                  <p class="text-gray-500 text-sm">111 Last Month</p>
+                </div>
+                <div class="bg-green-100 p-3 rounded-full">
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke-width="1.5"
+                    stroke="currentColor"
+                    class="w-6 h-6 text-green-600"
+                  >
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="2"
+                      d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"
+                    />
+                  </svg>
+                </div>
+              </div>
+            </div>
+          </a>
+          <!-- Task in Progress -->
+           <a href="{% url 'manager_dashboard' %}?type=in_progress">
+          <div class="bg-white rounded-xl p-6 shadow-sm">
+            <h3 class="text-sm font-medium text-gray-500 mb-4">
+              Task in Progress
+            </h3>
+            <div class="flex justify-between items-start">
+              <div>
+                <p class="text-3xl font-semibold mb-1">{{counts.in_progress_task}}</p>
+                <p class="text-gray-500 text-sm">111 Last Month</p>
+              </div>
+              <div class="bg-yellow-100 p-3 rounded-full">
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke-width="1.5"
+                  stroke="currentColor"
+                  class="w-6 h-6 text-yellow-600"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"
+                  />
+                </svg>
+              </div>
+            </div>
+          </div>
+          </a>
+          <!-- Todos -->
+           <a href="{% url 'manager_dashboard' %}?type=pending">
+          <div class="bg-white rounded-xl p-6 shadow-sm">
+            <h3 class="text-sm font-medium text-gray-500 mb-4">Todos</h3>
+            <div class="flex justify-between items-start">
+              <div>
+                <p class="text-3xl font-semibold mb-1">{{counts.pending_task}}</p>
+                <p class="text-gray-500 text-sm">111 Last Month</p>
+              </div>
+              <div class="bg-purple-100 p-3 rounded-full">
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke-width="1.5"
+                  stroke="currentColor"
+                  class="w-6 h-6 text-purple-600"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M15.666 3.888A2.25 2.25 0 0 0 13.5 2.25h-3c-1.03 0-1.9.693-2.166 1.638m7.332 0c.055.194.084.4.084.612v0a.75.75 0 0 1-.75.75H9a.75.75 0 0 1-.75-.75v0c0-.212.03-.418.084-.612m7.332 0c.646.049 1.288.11 1.927.184 1.1.128 1.907 1.077 1.907 2.185V19.5a2.25 2.25 0 0 1-2.25 2.25H6.75A2.25 2.25 0 0 1 4.5 19.5V6.257c0-1.108.806-2.057 1.907-2.185a48.208 48.208 0 0 1 1.927-.184"
+                  />
+                </svg>
+              </div>
+            </div>
+          </div>
+          </a>
+        </div>
+        <div class="mb-4">
+          {% if messages %}
+              {% for message in messages %}
+                  <div class="px-2 py-1 {% if message.tags == 'success' %}bg-green-500{% endif %} {% if message.tags == 'error' %}bg-red-500{% endif %}">{{message}}</div>
+              {% endfor %}
+          {% endif %}
+        </div>
+        {% block tasks %} {% endblock tasks %}
+      </div>
+</div>
+{% endblock content %}
+        

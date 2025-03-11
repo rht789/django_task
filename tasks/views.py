@@ -45,6 +45,10 @@ def manager_dashboard(request):
 def employee_dashboard(request):
     return render(request, "dashboard/user_dashboard.html")
 
+def task_details(request, task_id):
+    task = Task.objects.get(id=task_id)
+    return render(request,'task_details.html', {'task':task})
+
 @login_required
 @permission_required("tasks.add_task", login_url='no-permission')
 def create_task(request):
