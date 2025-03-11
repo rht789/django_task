@@ -86,8 +86,8 @@
   
             </div>
           </div>
-          <div>
-            <a href='{% url "update_task" task.id %}' class="px-2 py-1 bg-green-500">Edit</a>
+          <div class="flex gap-4">
+            <a href='{% url "update_task" task.id %}' class="px-4 py-2 bg-green-500 text-white rounded-md hover:bg-green-600">Edit Task</a>
           <form action='{% url "delete_task" task.id %}' method='POST'>
             {% csrf_token %}
             <button
