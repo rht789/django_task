@@ -122,3 +122,14 @@ def delete_task(request,id):
 def view_task(request):
     project2 = Project.objects.annotate(task_num = Count("task"))
     return render(request, "view_task.html", {"project2":project2})
+
+@login_required
+def dashboard(request):
+    if is_manager(request.user):
+        return redirect('manager_dashboard')
+    elif is_employee(request.user):
+        return redirect('employee_dashboard')
+    elif is_admin(request.user):
+        return redirect('admin-dashboard')
+
+    return redirect('no-permission')

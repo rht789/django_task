@@ -1343,3 +1343,196 @@ def view_task(request):
     return render(request, "view_task.html", {"project2":project2})
 
 here we added request.FILES to fetch the media we got from uploading otherwise we won't receive it
+
+13.8 : default imge nd chang task status, If a tasl doesn't have any image attached to it then a default image will be set to it , so in models we set it:
+class TaskDetail(models.Model):
+    HIGH = 'H'
+    MEDIUM = 'M'
+    LOW = 'L'
+    PRIORITY_OPTIONS = (
+        (HIGH , 'High'),
+        (MEDIUM, 'Medium'),
+        (LOW, 'Low')
+    )
+    # std_id = models.CharField(max_length=200, primary_key=True)
+    task = models.OneToOneField(Task, on_delete=models.CASCADE,related_name='details')
+    # assigned_to = models.CharField(max_length=100)
+    priority = models.CharField(
+        max_length=1,choices=PRIORITY_OPTIONS,default=LOW
+    )
+    assets = models.ImageField(upload_to='tasks_asset', blank=True, null=True, default="tasks_asset/default_img.jpg")
+    notes = models.TextField(blank=True,null=True)
+    
+    def __str__(self):
+        return f"Details from Task {self.task}"
+
+in assets the default attribute has url of a image which will doo the purpose of default picture,
+
+also fixed edit and delete button and dynamically status  change ,
+task_details.html:
+{% extends "base.html" %}
+{% block title %}{{task.title}}-Task Details{% endblock title %}
+{% block content %}
+<div class="container mx-auto px-4 py-8 max-w-7xl">
+    <h1 class="text-3xl font-bold mb-6">{{task.title}}</h1>
+
+    <!-- Navigation Tabs -->
+    <div class="flex gap-4 mb-8 border-b">
+      <button
+        class="px-4 py-2 bg-blue-50 text-blue-600 rounded-t-lg flex items-center gap-2"
+      >
+        <svg
+          class="w-5 h-5"
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+        >
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"
+          ></path>
+        </svg>
+        Task Detail
+      </button>
+      <div class="flex items-center gap-2">
+        <form method='post'>
+            {% csrf_token %}
+            <select
+                name="task_status"
+                id="task_status"
+                class="px-4 py-2 border rounded-md"
+                >
+                {% for value, label in status_choices %}
+                    <option value="{{ value }}">{{label}}</option>
+                {% endfor %}
+            </select>
+            <button
+                class="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600"
+                type="submit"
+                >
+                Change Status
+            </button>
+        </form>
+      </div>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+      <!-- Main Content -->
+      <div class="lg:col-span-2">
+        <div class="bg-white p-6 rounded-lg shadow-sm">
+          <!-- Status Tags -->
+          <div class="flex gap-3 mb-6">
+            <span
+              class="px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-sm"
+              >{{task.details.get_priority_display|upper}} PRIORITY</span
+            >
+            <span
+              class="px-3 py-1 bg-green-100 text-green-700 rounded-full text-sm"
+              >{{task.status}}</span
+            >
+          </div>
+
+          <!-- Creation Date -->
+          <div class="text-gray-600 mb-6">{{task.created_at}}</div>
+
+          <!-- Task Team -->
+          <div class="mb-9">
+            <h2 class="text-xl font-bold mb-4">TASK TEAM</h2>
+            <div class="space-y-4">
+              
+                {% for emp in task.assigned_to.all %}
+                    <div class="flex items-center gap-4">
+                        <div
+                        class="w-12 h-12 bg-blue-600 rounded-full flex items-center justify-center text-white"
+                        >
+                        {{emp.first_name|slice:':1'}}{{emp.last_name|slice:":1"}}
+                        </div>
+                        <div>
+                            <div class="font-semibold">{{emp.first_name}} {{emp.last_name}}</div>
+                            <div class="text-gray-600">{{emp.groups.first.name|default:"No Role"}}</div>
+                        </div>
+                    </div>
+                {% endfor %}
+  
+            </div>
+          </div>
+          <div class="flex gap-4">
+            <a href='{% url "update_task" task.id %}' class="px-4 py-2 bg-green-500 text-white rounded-md hover:bg-green-600">Edit Task</a>
+          <form action='{% url "delete_task" task.id %}' method='POST'>
+            {% csrf_token %}
+            <button
+              class="px-4 py-2 bg-red-500 text-white rounded-md hover:bg-red-600"
+              type="submit"
+            >
+              Delete Task
+            </button>
+          </form>
+            
+          </div>
+        </div>
+      </div>
+
+      <!-- Sidebar -->
+      <div class="lg:col-span-1">
+        <!-- Task Description -->
+        <div class="bg-white p-6 rounded-lg shadow-sm mb-6">
+          <h2 class="text-xl font-bold mb-4">TASK DESCRIPTION</h2>
+          <p class="text-gray-600">
+          {{task.description}}
+          </p>
+        </div>
+
+        <!-- Assets -->
+        <div class="bg-white p-6 rounded-lg shadow-sm">
+          <h2 class="text-xl font-bold mb-4">ASSETS</h2>
+          <div class="space-y-4">
+            <img
+              src={{task.details.assets.url}}
+              alt="Task Manager App Screenshot 1"
+              class="w-full rounded-lg"
+            />
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+{% endblock content %}
+
+and in views we send the status as context :
+@login_required
+@permission_required("tasks.view_task", login_url='no-permission')
+def task_details(request, task_id):
+    task = Task.objects.get(id=task_id)
+    status_choices = Task.STATUS_CHOICES
+    if request.method == "POST":
+        changed_status = request.POST.get('task_status')
+        task.status = changed_status
+        task.save()
+        return redirect('task_details', task.id)
+    return render(request,'task_details.html', {'task':task, 'status_choices' : status_choices})
+
+13.9  : Role based dashboard
+
+As we have 3 different group for role view we wither can run if else in the template itself or can create a view to do that, we created a view which is :
+@login_required
+def dashboard(request):
+    if is_manager(request.user):
+        return redirect('manager_dashboard')
+    elif is_employee(request.user):
+        return redirect('employee_dashboard')
+    elif is_admin(request.user):
+        return redirect('admin-dashboard')
+
+    return redirect('no-permission')
+
+and urls :
+    path('dashboard', dashboard, name='dashboard')
+
+and in logged-navbar.html we set url to:
+ <a  href="{% url 'dashboard' %}"
+            class="text-gray-600 hover:text-gray-800"
+            >Dashboard</a
+          >
+so in this way based on the roles everyone will see their dashboard based on their role
