@@ -5,6 +5,8 @@ from tasks.models import *
 from django.db.models import Q, Count, Max, Min
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required,user_passes_test,permission_required
+from django.utils.decorators import method_decorator
+from django.views import View
 
 # Create your views here.
 def is_admin(user):
@@ -78,6 +80,32 @@ def create_task(request):
         "taskdetail_form" : taskdetail_form
     }
     return render(request,'task_form.html', context)
+create_decorators = [login_required,permission_required("tasks.add_task", login_url='no-permission')]
+
+@method_decorator(create_decorators,name='dispatch')
+class CreateTask(View):
+    
+    template_name = 'task_form.html'
+    def get(self,request,*args,**kwargs):
+        task_form = TaskModelForm()
+        taskdetail_form = TaskDetailModelForm()   
+        context = {
+        "task_form" : task_form,
+        "taskdetail_form" : taskdetail_form
+        }
+        return render(request,self.template_name, context) 
+    
+    def post(self,request,*args,**kwargs):
+        task_form = TaskModelForm(request.POST)
+        taskdetail_form = TaskDetailModelForm(request.POST, request.FILES)
+        if task_form.is_valid() and taskdetail_form.is_valid():
+            """For Django model Form"""
+            task = task_form.save()
+            taskdetail = taskdetail_form.save(commit=False)
+            taskdetail.task = task
+            taskdetail.save()
+            messages.success(request, "Task Created Successfully")
+            return redirect('create_task')  
 
 @login_required
 @permission_required("tasks.change_task", login_url='no-permission')

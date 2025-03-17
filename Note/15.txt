@@ -1,0 +1,67 @@
+15 Class based Views
+
+15.1 : Intro to CBV
+Class based views are a special view which can be created by using class, its an alternative of function based class, where reusability is easy and also we get the benefits of inheritance,
+
+CBVs are particularly useful for:
+
+Reducing code duplication.
+Handling common patterns (e.g., displaying a list of objects or editing a form).
+Providing a clean, reusable structure for complex views.
+
+basic structure of cbvs:
+from django.views import View
+from django.http import HttpResponse
+
+class MyView(View):
+    def get(self, request, *args, **kwargs):
+        return HttpResponse("Hello, this is a GET request!")
+    
+    def post(self, request, *args, **kwargs):
+        return HttpResponse("Hello, this is a POST request!")
+
+15.2 Reusability of Class-Based views
+lets see and example of reusability:
+
+in views.py:
+from django.http import HttpResponse
+from django.views import View
+
+# Base Class
+class GreetingView(View):
+  greeting = "Good Day" # Class Attributes
+
+  def get(self, request):
+    return HttpResponse(self.greeting)
+
+now if we want to create subclassing then it will be:
+from django.http import HttpResponse
+from django.views import View
+
+# Base Class
+class GreetingView(View):
+  greeting = "Good Day" # Class Attributes
+
+  def get(self, request):
+    return HttpResponse(self.greeting)
+
+class MorningGreetingView(GreetingView):
+  greeting = "Morning to ya" 
+
+so here we created another class but inherited the base class GreetingView to use its greeting variable, bnow to to use this we need to put the urls too, so in urls.py:
+
+from .views impoer GreetingView,MorningGreetingView
+
+urlpatterns = [
+	path('greetings', GreetingView.as_view()),
+	path('morning-greetings', MorningGreetingView.as_view())
+]
+
+now if we don't want to create subclassesand want to use the base classes component in url we can write :
+from django.urls import path
+from .views import GreetingView
+
+# URLconf (urls.py)
+urlpatterns = [
+  path('greeting/', GreetingView.as_view(greeting="Hello there!")), 
+]
