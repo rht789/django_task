@@ -240,3 +240,156 @@ class CreateTask(ContextMixin,LoginRequiredMixin,PermissionRequiredMixin,View):
             return render(request,self.template_name, context)  
 
 here in get method if user have just load the page then TaskModelForm and TaskDetailModelForm instance will be created or if user just created a task then the info of that task will be present their, and in post method we are sending those tasks info in context
+
+15.5 ListView
+in our views theres a view of showing projects with a reverse relation of task, show we would show the projects along with tasks assigned to that, which was
+@login_required
+@permission_required("tasks.view_project", login_url='no-permission')
+def view_project(request):
+    project2 = Project.objects.annotate(task_num = Count("task"))
+    return render(request, "view_task.html", {"project2":project2})
+
+so thee is mixin for list type view named ListView, it has a lot of attributes can be found in classy class based views https://ccbv.co.uk/ListView/
+
+so using this our show project is :
+class ViewProject(LoginRequiredMixin,PermissionRequiredMixin,ListView):
+    model = Project  
+    login_url = 'sign-in'
+    permission_required = "tasks.view_project"
+    context_object_name = 'project2'  
+    template_name = 'view_task.html' 
+
+    def get_queryset(self):
+        queryset = Project.objects.annotate(
+            task_num=Count('task')  
+        ).order_by('task_num')  
+        return queryset
+
+get_queryset used for including tasknum count and to order by it bcz without it it will run the query Project.objects.all()
+
+15.6 DetailView
+
+same as listview , at first lets see previous vs CBV code:
+
+previous: 
+@login_required
+@permission_required("tasks.view_task", login_url='no-permission')
+def task_details(request, task_id):
+    task = Task.objects.get(id=task_id)
+    status_choices = Task.STATUS_CHOICES
+    if request.method == "POST":
+        changed_status = request.POST.get('task_status')
+        task.status = changed_status
+        task.save()
+        return redirect('task_details', task.id)
+    return render(request,'task_details.html', {'task':task, 'status_choices' : status_choices})
+
+with cbv:
+class TaskDetails(DetailView,LoginRequiredMixin,PermissionRequiredMixin,View):
+    model = Task
+    login_url='sign-in'
+    permission_required='tasks.view_task'
+    template_name='task_details.html'
+    context_object_name='task'
+    pk_url_kwarg='task_id'
+    
+    def get_context_data(self, **kwargs):
+        context=super().get_context_data(**kwargs)
+        context['status_choices'] = Task.STATUS_CHOICES
+    def post(self,request,*args,**kwargs):
+        task = self.get_object
+        changed_status = request.POST.get('task_status')
+        task.status = changed_status
+        task.save()
+        return redirect('task_details', task.id)
+
+now here we need 2 context data but with context_object_name we just can pass one context so we used get_context_data method override to also include status_choiced, then pk_url_kwarg by default has 'pk' meaning any object we need to access will benamed pk , it is The URL keyword for the primary key, so when we access a specific task we wrote Task.objects.get(id=task_id) in functionbased view but by default it is Task.objects.get(id=pk) but if we want to use our primary key then smpply changing pk_url_kwarrg = task_id would do it
+
+15.7 UpdateView
+new update view :
+class UpdateTask(UpdateView):
+    model = Task
+    form_class = TaskModelForm
+    template_name = 'task_form.html'
+    context_object_name = 'task'
+    pk_url_kwarg = 'id'
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['task_form'] = self.get_form()
+        print(context)
+        if hasattr(self.object, 'details') and self.object.details:
+            context['task_detail_form'] = TaskDetailModelForm(
+                instance=self.object.details)
+        else:
+            context['task_detail_form'] = TaskDetailModelForm()
+
+        return context
+
+    def post(self, request, *args, **kwargs):
+        self.object = self.get_object()
+        task_form = TaskModelForm(request.POST, instance=self.object)
+
+        task_detail_form = TaskDetailModelForm(
+            request.POST, request.FILES, instance=getattr(self.object, 'details', None))
+
+        if task_form.is_valid() and task_detail_form.is_valid():
+
+            """ For Model Form Data """
+            task = task_form.save()
+            task_detail = task_detail_form.save(commit=False)
+            task_detail.task = task
+            task_detail.save()
+
+            messages.success(request, "Task Updated Successfully")
+            return redirect('update-task', self.object.id)
+        return redirect('update-task', self.object.id)
+
+from
+@login_required
+@permission_required("tasks.change_task", login_url='no-permission')
+def update_task(request,id):
+    task = Task.objects.get(id=id)
+    task_form = TaskModelForm(instance=task)
+    
+    if task.details:
+        taskdetail_form = TaskDetailModelForm(instance=task.details)
+        
+    if request.method == "POST":
+        task_form = TaskModelForm(request.POST, instance=task)
+        taskdetail_form = TaskDetailModelForm(request.POST, instance=task.details)
+        if task_form.is_valid() and taskdetail_form.is_valid():
+            """For Django model Form"""
+            task = task_form.save()
+            taskdetail = taskdetail_form.save(commit=False)
+            taskdetail.task = task
+            taskdetail.save()
+            
+            messages.success(request, "Task Updated Successfully")
+            return redirect('update_task',id)                
+    context = {
+        "task_form" : task_form,
+        "taskdetail_form" : taskdetail_form
+    }
+    return render(request,'task_form.html', context)
+
+here we did these:
+Base Setup: Inherited from UpdateView to update a Task object.
+model = Task: Specifies the Task model.
+form_class = TaskModelForm: Uses TaskModelForm for the main form.
+template_name = 'task_form.html': Renders the task_form.html template.
+context_object_name = 'task': Names the Task object as task in the context.
+pk_url_kwarg = 'id': Maps the URL parameter id to the primary key.
+get_context_data(): Customized the context for the template.
+Added task_form using self.get_form() (the TaskModelForm).
+Added task_detail_form:
+If self.object has a details attribute and it’s not None, pre-filled the form with self.object.details.
+Otherwise, provided an empty TaskDetailModelForm.
+post(): Handled form submission.
+Fetched the Task with self.get_object().
+Created task_form and task_detail_form with POST data and existing instances.
+If both forms are valid:
+Saved the Task (task_form.save()).
+Saved the TaskDetail (linked to task) after setting task_detail.task.
+Showed a success message and redirected to 'update-task'.
+If invalid, redirected without re-rendering (not ideal—could be improved).
