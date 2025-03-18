@@ -9,6 +9,7 @@ from django.utils.decorators import method_decorator
 from django.views import View
 from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin
 from django.views.generic.base import ContextMixin
+from django.views.generic import ListView, DetailView
 
 # Create your views here.
 def is_admin(user):
@@ -61,6 +62,24 @@ def task_details(request, task_id):
         return redirect('task_details', task.id)
     return render(request,'task_details.html', {'task':task, 'status_choices' : status_choices})
 
+class TaskDetails(DetailView,LoginRequiredMixin,PermissionRequiredMixin,View):
+    model = Task
+    login_url='sign-in'
+    permission_required='tasks.view_task'
+    template_name='task_details.html'
+    context_object_name='task'
+    pk_url_kwarg='task_id'
+    
+    def get_context_data(self, **kwargs):
+        context=super().get_context_data(**kwargs)
+        context['status_choices'] = Task.STATUS_CHOICES
+    def post(self,request,*args,**kwargs):
+        task = self.get_object
+        changed_status = request.POST.get('task_status')
+        task.status = changed_status
+        task.save()
+        return redirect('task_details', task.id)
+        
 
 class CreateTask(ContextMixin,LoginRequiredMixin,PermissionRequiredMixin,View):
     
@@ -132,11 +151,18 @@ def delete_task(request,id):
     messages.error(request,"Something went Wrong")
     redirect("manager_dashboard")
 
-@login_required
-@permission_required("tasks.view_task", login_url='no-permission')
-def view_task(request):
-    project2 = Project.objects.annotate(task_num = Count("task"))
-    return render(request, "view_task.html", {"project2":project2})
+class ViewProject(LoginRequiredMixin,PermissionRequiredMixin,ListView):
+    model = Project  
+    login_url = 'sign-in'
+    permission_required = "tasks.view_project"
+    context_object_name = 'project2'  
+    template_name = 'view_task.html' 
+
+    def get_queryset(self):
+        queryset = Project.objects.annotate(
+            task_num=Count('task')  
+        ).order_by('task_num')  
+        return queryset
 
 @login_required
 def dashboard(request):
