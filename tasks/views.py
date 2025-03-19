@@ -10,6 +10,7 @@ from django.views import View
 from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin
 from django.views.generic.base import ContextMixin
 from django.views.generic import ListView, DetailView, UpdateView
+from django.http import Http404
 
 # Create your views here.
 def is_admin(user):
@@ -62,7 +63,7 @@ def task_details(request, task_id):
         return redirect('task_details', task.id)
     return render(request,'task_details.html', {'task':task, 'status_choices' : status_choices})
 
-class TaskDetails(DetailView,LoginRequiredMixin,PermissionRequiredMixin,View):
+class TaskDetails(DetailView,LoginRequiredMixin,PermissionRequiredMixin):
     model = Task
     login_url='sign-in'
     permission_required='tasks.view_task'
@@ -73,12 +74,14 @@ class TaskDetails(DetailView,LoginRequiredMixin,PermissionRequiredMixin,View):
     def get_context_data(self, **kwargs):
         context=super().get_context_data(**kwargs)
         context['status_choices'] = Task.STATUS_CHOICES
+        return context
+    
     def post(self,request,*args,**kwargs):
-        task = self.get_object
+        self.object = self.get_object()
         changed_status = request.POST.get('task_status')
-        task.status = changed_status
-        task.save()
-        return redirect('task_details', task.id)
+        self.object.status = changed_status
+        self.object.save()
+        return redirect('task_details', self.object.id)
         
 
 class CreateTask(ContextMixin,LoginRequiredMixin,PermissionRequiredMixin,View):
@@ -110,7 +113,9 @@ class CreateTask(ContextMixin,LoginRequiredMixin,PermissionRequiredMixin,View):
             return render(request,self.template_name, context)  
 
 
-class UpdateTask(UpdateView):
+class UpdateTask(LoginRequiredMixin,PermissionRequiredMixin,UpdateView):
+    login_url='sign-in'
+    permission_required='tasks.change_task'
     model = Task
     form_class = TaskModelForm
     template_name = 'task_form.html'
@@ -145,8 +150,8 @@ class UpdateTask(UpdateView):
             task_detail.save()
 
             messages.success(request, "Task Updated Successfully")
-            return redirect('update-task', self.object.id)
-        return redirect('update-task', self.object.id)
+            return redirect('update_task', self.object.id)
+        return redirect('update_task', self.object.id)
 @login_required
 @permission_required("tasks.delete_task", login_url='no-permission')
 def delete_task(request,id):
