@@ -6,6 +6,7 @@ from users.forms import CustomRegisterForm, LoginForm, AssignRoleForm, CreateGro
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required,user_passes_test
 from django.db.models import Prefetch
+from django.contrib.auth.views import LoginView
 
 # Create your views here.
 
@@ -39,6 +40,14 @@ def sign_in(request):
             return redirect('home')
     return render(request, "registration/signin.html", {'form': form})
 
+class CustomLoginView(LoginView):
+    form_class=LoginForm
+    template_name='registration/signin.html'
+
+    def get_success_url(self):
+        next_url = self.request.GET.get('next')
+        return next_url if next_url else super().get_success_url()
+    
 @login_required
 def sign_out(request):
     if request.method == 'POST':
