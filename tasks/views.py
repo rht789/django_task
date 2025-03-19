@@ -87,12 +87,13 @@ class CreateTask(ContextMixin,LoginRequiredMixin,PermissionRequiredMixin,View):
     
     login_url='sign-in'
     permission_required='tasks.add_task'
-    template_name = 'task_form.html'
+    template_name = 'task_form.html/'
     
     def get_context_data(self, **kwargs):
         context=super().get_context_data(**kwargs)
         context["task_form"] = kwargs.get('task_form', TaskModelForm())
         context["task_detail_form"] = kwargs.get('task_detail_form', TaskDetailModelForm())
+        return context
     
     def get(self,request,*args,**kwargs): 
         context = self.get_context_data()

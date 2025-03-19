@@ -2,11 +2,11 @@ from django.shortcuts import redirect, render, HttpResponse
 from django.contrib.auth.models import User, Group
 from django.contrib.auth.tokens import default_token_generator
 from django.contrib.auth import login,logout
-from users.forms import CustomRegisterForm, LoginForm, AssignRoleForm, CreateGroupForm
+from users.forms import CustomRegisterForm, LoginForm, AssignRoleForm, CreateGroupForm, CustomPasswordChangeForm
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required,user_passes_test
 from django.db.models import Prefetch
-from django.contrib.auth.views import LoginView
+from django.contrib.auth.views import LoginView,PasswordChangeView,PasswordChangeDoneView
 from django.views.generic import TemplateView
 
 # Create your views here.
@@ -127,3 +127,10 @@ class ProfileView(TemplateView):
         context['last_login']= user.last_login
         
         return context
+    
+class ChangePassword(PasswordChangeView):
+    form_class=CustomPasswordChangeForm
+    template_name='accounts/password_change.html'
+    
+class PasswordChangeDoneView(PasswordChangeDoneView):
+    template_name='accounts/password_change_done.html'

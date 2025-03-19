@@ -11,7 +11,7 @@
         <form method="POST" enctype="multipart/form-data">
             {% csrf_token %}
             {{ task_form.as_p }}
-            {{ taskdetail_form.as_p }}
+            {{ task_detail_form.as_p }}
             <button class="mb-5 bg-purple-600 px-3 py-2 text-white mt-2 rounded-md" type="submit">Submit</button>
         </form>
     </div>
