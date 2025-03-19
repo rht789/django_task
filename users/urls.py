@@ -1,5 +1,5 @@
 from django.urls import path,include
-from users.views import signup,sign_in,sign_out,admin_dashboard,assign_role,create_group,group_list,activate_user,CustomLoginView
+from users.views import signup,sign_in,sign_out,admin_dashboard,assign_role,create_group,group_list,activate_user,CustomLoginView,ProfileView
 
 
 urlpatterns = [
@@ -8,6 +8,7 @@ urlpatterns = [
     path('sign-in/', CustomLoginView.as_view(), name='sign-in'),
     path('sign-out/', sign_out, name='sign-out'),
     path('activate/<int:user_id>/<str:token>', activate_user),
+    path('profile', ProfileView.as_view(), name='profile'),
     path('admin/dashboard', admin_dashboard, name = 'admin-dashboard'),
     path('admin/<int:user_id>/assign-role/', assign_role, name = 'assign-role'),
     path('admin/create-group/', create_group, name = 'create-group'),
