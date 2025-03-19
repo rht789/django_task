@@ -10,7 +10,6 @@ from django.views import View
 from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin
 from django.views.generic.base import ContextMixin
 from django.views.generic import ListView, DetailView, UpdateView
-from django.http import Http404
 
 # Create your views here.
 def is_admin(user):
