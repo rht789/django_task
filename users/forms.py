@@ -1,5 +1,5 @@
 from django import forms
-from django.contrib.auth.forms import UserCreationForm, AuthenticationForm, PasswordChangeForm, PasswordResetForm
+from django.contrib.auth.forms import UserCreationForm, AuthenticationForm, PasswordChangeForm, PasswordResetForm, SetPasswordForm
 from django.contrib.auth.models import User,Group, Permission
 from tasks.forms import StyledFormMixin
 
@@ -94,3 +94,6 @@ class CustomPasswordChangeForm(StyledFormMixin,PasswordChangeForm):
     pass
 class CustomPasswordResetForm(StyledFormMixin,PasswordResetForm):
     pass
+class CustomPasswordResetConfirmForm(StyledFormMixin,SetPasswordForm):
+    def __init__(self, user, *args, **kwargs):
+        super().__init__(user, *args, **kwargs)
