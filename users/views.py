@@ -2,12 +2,13 @@ from django.shortcuts import redirect, render, HttpResponse
 from django.contrib.auth.models import User, Group
 from django.contrib.auth.tokens import default_token_generator
 from django.contrib.auth import login,logout
-from users.forms import CustomRegisterForm, LoginForm, AssignRoleForm, CreateGroupForm, CustomPasswordChangeForm
+from users.forms import CustomRegisterForm, LoginForm, AssignRoleForm, CreateGroupForm, CustomPasswordChangeForm,CustomPasswordResetForm
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required,user_passes_test
 from django.db.models import Prefetch
-from django.contrib.auth.views import LoginView,PasswordChangeView,PasswordChangeDoneView
+from django.contrib.auth.views import LoginView,PasswordChangeView,PasswordChangeDoneView, PasswordResetView
 from django.views.generic import TemplateView
+from django.urls import reverse_lazy
 
 # Create your views here.
 
@@ -134,3 +135,14 @@ class ChangePassword(PasswordChangeView):
     
 class PasswordChangeDoneView(PasswordChangeDoneView):
     template_name='accounts/password_change_done.html'
+    
+class PasswordReset(PasswordResetView):
+    form_class=CustomPasswordResetForm
+    template_name='registration/reset_password.html'
+    success_url = reverse_lazy('sign-in')
+
+    def form_valid(self, form):
+        messages.success(
+        self.request, 'A Reset email sent. Please check your email')
+        return super().form_valid(form)
+
