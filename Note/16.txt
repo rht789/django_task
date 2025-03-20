@@ -1,0 +1,378 @@
+16 Django Auth Views & Custom Filters
+
+16.1 Intro to Auth Views and LoginView
+Just like other CBV we have some auth related CBV too, one of them is LoginView, for now we just set the URL to use this CBV directly as we didn't override any method in our view except just give the template name ,bczby default it has the template_name of 'registration/login.html' but since we created our login name by signin, we needed to manually instruct it, so the urls for sign-in willbe :
+path('sign-in/', LoginView.as_view(template_name='registration/signin.html'), name='sign-in'),
+
+and also in settings.py we need to set login url and redirect url path exact same way, we just can't write name weneed to give the path which are :
+LOGIN_URL = '/users/sign-in/'
+LOGIN_REDIRECT_URL = '/tasks/dashboard/'
+
+16.2 Customizing LoginView
+now previously we use LoginView but it didn't have any style or design so we need to customize it, before using CBV we were using function based login method which was :
+def sign_in(request):
+    form = LoginForm()
+    if request.method == "POST":
+        form = LoginForm(data=request.POST)
+        if form.is_valid():
+            user = form.get_user()
+            login(request, user)
+            return redirect('home')
+    return render(request, "registration/signin.html", {'form': form})
+
+now previously we used our custom login form which we will do on our CBV too,
+class CustomLoginView(LoginView):
+    form_class=LoginForm
+    template_name='registration/signin.html'
+
+    def get_success_url(self):
+        next_url = self.request.GET.get('next')
+        return next_url if next_url else super().get_success_url()
+
+so we created a CBV view for our login and specified the template url and form class it need to use, now we have seen an issue, suppose we want to access something which requires login redirect  use to login page bt after login we are then not redirected to that page we wwere initially trying to access, so to fix that we are overriding the success_url method to do that
+
+16.3 ProfieView using Templateview
+Now we will add an user profile using TemplateView, templateview is used when there will be no models or form in the specific views  so only the content rendering job will be done there, because in profile viewing we are not particularly changing anything from database or any froms, that why we will use templateview,
+our template (accounts/profile.html}:
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>User Profile</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+  </head>
+  <body class="bg-gray-100">
+    <div class="flex min-h-screen">
+      <!-- Sidebar -->
+      <aside class="w-64 bg-white shadow-md">
+        <div class="p-4">
+          <h2 class="text-xl font-semibold text-gray-800">Menu</h2>
+        </div>
+        <nav class="mt-6">
+          <a
+            href="#"
+            class="block py-2 px-4 text-gray-700 bg-gray-200 hover:bg-gray-300"
+            >Profile</a
+          >
+          <a href="#" class="block py-2 px-4 text-gray-700 hover:bg-gray-200"
+            >Edit Profile</a
+          >
+          <a href="#" class="block py-2 px-4 text-gray-700 hover:bg-gray-200"
+            >Change Password</a
+          >
+        </nav>
+      </aside>
+
+      <!-- Main Content -->
+      <main class="flex-1 p-8">
+        <h1 class="text-3xl font-bold text-gray-800 mb-8">User Profile</h1>
+
+        <div class="bg-white shadow-md rounded-lg p-6">
+          <div class="flex items-center mb-6">
+            <img
+              src="https://png.pngtree.com/png-clipart/20231019/original/pngtree-user-profile-avatar-png-image_13369988.png"
+              alt="User Avatar"
+              class="w-24 h-24 rounded-full object-cover mr-6"
+            />
+            <div>
+              <h2 class="text-2xl font-semibold text-gray-800">{{name}}</h2>
+              <p class="text-gray-600">Software Developer</p>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <h3 class="text-lg font-semibold text-gray-700 mb-2">
+                Personal Information
+              </h3>
+              <p class="text-gray-600">
+                <span class="font-medium">Email:</span> {{email}}
+              </p>
+              <p class="text-gray-600">
+                <span class="font-medium">Username:</span> {{username}}
+              </p>
+              <p class="text-gray-600">
+                <span class="font-medium">Location:</span> New York, USA
+              </p>
+            </div>
+            <div>
+              <h3 class="text-lg font-semibold text-gray-700 mb-2">
+                Account Information
+              </h3>
+              <p class="text-gray-600">
+                <span class="font-medium">Member Since:</span> {{date_joined}}
+              </p>
+              <p class="text-gray-600">
+                <span class="font-medium">Last Login:</span> {{last_login}}
+              </p>
+            </div>
+          </div>
+
+          <div class="mt-6">
+            <h3 class="text-lg font-semibold text-gray-700 mb-2">Bio</h3>
+            <p class="text-gray-600">
+              Passionate software developer with 5 years of experience in web
+              technologies. Loves to create user-friendly and efficient
+              applications. In free time, enjoys hiking and reading tech blogs.
+            </p>
+          </div>
+        </div>
+      </main>
+    </div>
+  </body>
+</html>
+
+views and urls:
+class ProfileView(TemplateView):
+    template_name = 'accounts/profile.html'
+    
+    def get_context_data(self, **kwargs):
+        context=super().get_context_data(**kwargs)
+        user = self.request.user
+        context['username'] = user.username
+        context['email'] = user.email
+        context['name'] = user.get_full_name()
+        
+        context['date_joined'] = user.date_joined
+        context['last_login']= user.last_login
+        
+        return context
+  
+
+urls: path('profile', ProfileView.as_view(), name='profile'),
+
+13.4 Custom template Filter
+
+Now in template view we can customize the way date and time can be rendered, butinstead of each time writing it down what if we make our own filter, so to do that at first create the templatetags folder on the apps(mine on users) then create the init file and another file where we will wwrite the filters, so we named it customer_flters.py :
+from django import template
+from datetime import datetime
+from django.utils import timezone
+
+register = template.Library()
+
+
+@register.filter
+def humanized_date(value):
+    if value:
+        today = datetime.now().date()
+        value = timezone.localtime(value)
+        if value.date() == today:
+            return f"Today at {value.strftime('%I:%M %p')}"
+        if value.date() == today.replace(day=today.day - 1):
+            return f"Yesterday at {value.strftime('%I:%M %p')}"
+        else:
+            return f"{value.date().strftime('%B %d')}, {value.strftime('%I:%M %p')}"
+    return "No login record available"
+
+here we did this:
+Set Up Imports
+Import django.template for template tools.
+Import datetime for date handling.
+Import django.utils.timezone for timezone support.
+Create Template Library
+Define register = template.Library() to register custom filters.
+Define the Filter
+Use @register.filter decorator to mark humanized_date as a filter.
+Create function humanized_date(value) that takes a datetime value.
+Add Conditional Logic
+Check if value: to handle None cases.
+If None, return "No login record available".
+Process the Date
+Get today’s date: today = datetime.now().date().
+Convert value to local time: value = timezone.localtime(value).
+Format Based on Date
+If today: if value.date() == today, return "Today at {value.strftime('%I:%M %p')}" (e.g., "Today at 3:45 PM").
+If yesterday: if value.date() == today.replace(day=today.day - 1), return "Yesterday at {value.strftime('%I:%M %p')}".
+Else: Return "{value.date().strftime('%B %d')}, {value.strftime('%I:%M %p')}" (e.g., "March 19, 11:00 AM").
+
+and in template file we would Load filter: {% custom_filters %}.
+Apply:  <p class="text-gray-600">
+                <span class="font-medium">Member Since:</span> {{member_since|humanized_date}}
+              </p>
+              <p class="text-gray-600">
+                <span class="font-medium">Last Login:</span> {{last_login|humanized_date}}
+              </p>
+
+16.5 LogoutView
+So we used it directly in our url without explicitly writing in our views.py, 
+path('sign-out/', LogoutView.as_view(), name='sign-out'),
+
+and in settings.py we need to specify where we will be redirected after logout:
+LOGOUT_REDIRECT_URL = '/'
+
+16.6 PasswordChangeView
+we will create a from so that it follows our style 
+forms.py: 
+class CustomPasswordChangeForm(StyledFormMixin,PasswordChangeForm):
+    pass
+views.py:
+class ChangePassword(PasswordChangeView):
+    form_class=CustomPasswordChangeForm
+    template_name='accounts/password_change.html'
+    
+class PasswordChangeDoneView(PasswordChangeDoneView):
+    template_name='accounts/password_change_done.html'
+here both change password and after changing password will be shown
+
+urls:
+path('password-change/done/', PasswordChangeDoneView.as_view(
+        template_name='accounts/password_change_done.html'), name='password_change_done')
+
+template:
+password_change.html:
+{% extends "base.html" %}
+{% block content %}
+    <div class='mx-auto w-1/2 my-9'>
+        {% if messages %}
+            {% for message in messages %}
+                <div class="px-2 py-1 {% if message.tags == 'success' %}bg-green-200 text-green-700{% endif %} ">{{message}}</div>
+            {% endfor %}
+        {% endif %}
+        <form method='POST'>
+            {% csrf_token %}
+            {{ form }}
+            <button class='bg-purple-500 px-2 py-1 rounded text-white mt-3' type="submit">Sign In</button>
+        </form>
+    </div>
+{% endblock content %}
+
+and password_change_done.html:
+<p>Please Back to <a href="{% url 'dashboard' %}">Dashboard</a></p>
+
+16.7 PasswordResetView:
+This view is used from sending the password changing email, sojust like previous CBV we need to create a template which renders the page that takes the email, so we create a forms then views and urls which renders the template
+class PasswordReset(PasswordResetView):
+    form_class=CustomPasswordResetForm
+    template_name='registration/reset_password.html'
+    success_url = reverse_lazy('sign-in')
+
+    def get_context_data(self, **kwargs):
+        context=super().get_context_data(**kwargs)
+        context['protocol'] = 'https' if self.request.is_secure() else 'http'
+        context['domain'] = self.request.get_host()
+        return context
+
+    def form_valid(self, form):
+        messages.success(
+        self.request, 'A Reset email sent. Please check your email')
+        return super().form_valid(form)
+
+here reverselazy works like return redireect
+urls: path('password_reset/', PasswordReset.as_view(), name='reset-password')
+forms: class CustomPasswordResetForm(StyledFormMixin,PasswordResetForm):
+    pass
+16.8 PasswordResetConfirmView
+now to actually get the mail and resetting the password we need aanother view:
+forms.py:
+class CustomPasswordResetConfirmForm(StyledFormMixin,SetPasswordForm):
+    pass
+
+views:
+class CustomPasswordResetConfirmView(PasswordResetConfirmView):
+    form_class=CustomPasswordResetConfirmForm
+    template_name='registration/reset_password.html'
+    success_url = reverse_lazy('sign-in')
+
+    
+    def form_valid(self, form):
+        messages.success(
+        self.request, 'Password Reset Successfully!')
+        return super().form_valid(form)
+
+urls:
+path('password-reset/confirm/<uidb64>/<token>/',CustomPasswordResetConfirmView.as_view(), name='password_reset_confirm')
+
+16.9 Custom Email Template
+In previous section we have used the resetpassword view, which has builtin email text formatting, what if we want to use our own formatting, doing tat is possible even with html and css,so we made a template:
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Password Reset</title>
+    <style>
+        /* Inline CSS for compatibility with email clients */
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f9f9f9;
+            margin: 0;
+            padding: 0;
+        }
+        .email-container {
+            max-width: 600px;
+            margin: 20px auto;
+            background-color: #ffffff;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+        .header {
+            background-color: #4CAF50;
+            color: #ffffff;
+            text-align: center;
+            padding: 20px;
+        }
+        .body {
+            padding: 20px;
+        }
+        .footer {
+            background-color: #f4f4f4;
+            text-align: center;
+            padding: 10px;
+            font-size: 12px;
+            color: #888888;
+        }
+        .button {
+            display: inline-block;
+            padding: 10px 20px;
+            background-color: #4CAF50;
+            color: white;
+            text-decoration: none;
+            border-radius: 5px;
+            margin: 20px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="email-container">
+        <div class="header">
+            <h1>Password Reset Request</h1>
+        </div>
+        <div class="body">
+            <p>Hi {{ user.get_full_name|default:user.username }},</p>
+            <p>You recently requested to reset your password for your account. Click the button below to reset it:</p>
+            <p>
+                <a href="{{ protocol }}://{{ domain }}{% url 'password_reset_confirm' uidb64=uid token=token %}" class="button">
+                    Reset Password
+                </a>
+            </p>
+            <p>If you did not request this, please ignore this email. This password reset link will expire in 24 hours.</p>
+        </div>
+        <div class="footer">
+            &copy; {{ year }} Your Website. All rights reserved.
+            <br>
+            Contact us at <a href="mailto:support@taskmanager.com">support@taskmanager.com</a>.
+        </div>
+    </div>
+</body>
+</html>
+
+and refrenced this email in our view named html_email_template_name in CustomPasswordResetView,
+
+class CustomPasswordResetView(PasswordResetView):
+    form_class=CustomPasswordResetForm
+    template_name='registration/reset_password.html'
+    success_url = reverse_lazy('sign-in')
+    html_email_template_name = 'registration/reset_email.html'
+    
+    def get_context_data(self, **kwargs):
+        context=super().get_context_data(**kwargs)
+        context['protocol'] = 'https' if self.request.is_secure() else 'http'
+        context['domain'] = self.request.get_host()
+        return context
+
+    def form_valid(self, form):
+        messages.success(
+        self.request, 'A Reset email sent. Please check your email')
+        return super().form_valid(form)

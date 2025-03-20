@@ -95,5 +95,4 @@ class CustomPasswordChangeForm(StyledFormMixin,PasswordChangeForm):
 class CustomPasswordResetForm(StyledFormMixin,PasswordResetForm):
     pass
 class CustomPasswordResetConfirmForm(StyledFormMixin,SetPasswordForm):
-    def __init__(self, user, *args, **kwargs):
-        super().__init__(user, *args, **kwargs)
+    pass
