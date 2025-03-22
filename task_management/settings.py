@@ -43,6 +43,8 @@ MIDDLEWARE = [
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
 ]
 
+AUTH_USER_MODEL='users.CustomUser'
+
 INTERNAL_IPS = [
     # ...
     "127.0.0.1",
