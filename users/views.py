@@ -150,6 +150,8 @@ class ProfileView(TemplateView):
         context['username'] = user.username
         context['email'] = user.email
         context['name'] = user.get_full_name()
+        context['bio'] = user.userprofile.bio
+        context['profile_image'] = user.userprofile.profile_image
         
         context['date_joined'] = user.date_joined
         context['last_login']= user.last_login
