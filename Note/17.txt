@@ -1,0 +1,256 @@
+17 Customizing User Profile
+17.1 Create User Profile
+Now we will update or create user profile so by updater creating we mean that we have seen extra two field like bio and profile image to add these two field we either need to create another model or we can simply update our user model so for now we will create another model with one to one relation with our user model which is given below:
+in models.py :
+class UserProfile(models.Model):
+    user = models.OneToOneField(
+        User, on_delete=models.CASCADE, related_name='userprofile', primary_key=True)
+    profile_image = models.ImageField(upload_to='profile_images', blank=True)
+    bio = models.TextField(blank=True)
+
+    def __str__(self):
+        return f'{self.user.username} profile'
+
+and after creating User we need to assign these 2 field with usermodel which we will do by signals:
+@receiver(post_save, sender=User)
+def create_or_update_user_profile(sender, instance, created, **kwargs):
+    if created:
+        UserProfile.objects.create(user=instance)
+
+now after migrating we still will see an error which is  related to previous user not having the userProfile.
+
+17.2  Fixing The User Profile error
+to fix it we will run a shell script where we will manually assign it to the previous user, the script is :
+for user in users:
+    if not hasattr(user, 'userprofile'):
+        UserProfile.objects.create(user=user)
+        print("Missing profile created for user:", user.username)
+and also to view the userprofile on admin we need to register it, which is admin.site.register(UserProfile)
+
+17.3 Edit User Profile
+To edt the profile we will use forms to show all field along with previous instances,
+class EditProfileForm(StyledFormMixin, forms.ModelForm):
+    class Meta:
+        model = User
+        fields = ['email', 'first_name', 'last_name']
+
+    bio = forms.CharField(required=False, widget=forms.Textarea, label='Bio')
+    profile_image = forms.ImageField(required=False, label='Profile Image')
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        # Todo: Handle Error
+
+        if self.userprofile:
+            self.fields['bio'].initial = self.userprofile.bio
+            self.fields['profile_image'].initial = self.userprofile.profile_image
+
+    def save(self, commit=True):
+        user = super().save(commit=False)
+
+        # Save userProfile jodi thake
+        if self.userprofile:
+            self.userprofile.bio = self.cleaned_data.get('bio')
+            self.userprofile.profile_image = self.cleaned_data.get(
+                'profile_image')
+
+            if commit:
+                self.userprofile.save()
+
+        if commit:
+            user.save()
+
+        return user
+
+and to actually view the current data in the field for UserProfile we need to pass it through views so our views.py:
+class EditProfileView(UpdateView):
+    model = User
+    form_class = EditProfileForm
+    template_name = 'accounts/update_profile.html'
+    context_object_name = 'form'
+
+    def get_object(self):
+        return self.request.user
+
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        kwargs['userprofile'] = UserProfile.objects.get(user=self.request.user)
+        return kwargs
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        user_profile = UserProfile.objects.get(user=self.request.user)
+        print("views", user_profile)
+        context['form'] = self.form_class(
+            instance=self.object, userprofile=user_profile)
+        return context
+
+    def form_valid(self, form):
+        form.save(commit=True)
+        return redirect('profile')
+as well as its urls:
+path('edit-profile/', EditProfileView.as_view(), name='edit-profile')
+
+template:
+{% extends "base.html" %}
+{% block content %}
+    <div class='mx-auto w-1/2 my-9'>
+        {% if messages %}
+            {% for message in messages %}
+                <div class="px-2 py-1 {% if message.tags == 'success' %}bg-green-200 text-green-700{% endif %} ">{{message}}</div>
+            {% endfor %}
+        {% endif %}
+        <form method='POST'>
+            {% csrf_token %}
+            {{ form }}
+            <button class='bg-purple-500 px-2 py-1 rounded text-white mt-3' type="submit">Sign In</button>
+            <a href="{% url 'reset-password' %}">Forget Password?</a>
+        </form>
+    </div>
+{% endblock content %}
+
+17.4 Now here an error will be occurred named "EditProfileForm object has no attribute named 'userprofile' which we fixed in forms.py by popping it before initializing with ModelForm hereis the code:
+class EditProfileForm(StyledFormMixin, forms.ModelForm):
+    class Meta:
+        model = User
+        fields = ['email', 'first_name', 'last_name']
+
+    bio = forms.CharField(required=False, widget=forms.Textarea, label='Bio')
+    profile_image = forms.ImageField(required=False, label='Profile Image')
+
+    def __init__(self, *args, **kwargs):
+        self.userprofile = kwargs.pop('userprofile', None)
+        super().__init__(*args, **kwargs)
+        print("forms", self.userprofile)
+
+        # Todo: Handle Error
+
+        if self.userprofile:
+            self.fields['bio'].initial = self.userprofile.bio
+            self.fields['profile_image'].initial = self.userprofile.profile_image
+
+    def save(self, commit=True):
+        user = super().save(commit=False)
+
+        # Save userProfile jodi thake
+        if self.userprofile:
+            self.userprofile.bio = self.cleaned_data.get('bio')
+            self.userprofile.profile_image = self.cleaned_data.get(
+                'profile_image')
+
+            if commit:
+                self.userprofile.save()
+
+        if commit:
+            user.save()
+
+        return user
+
+also in views.py weneed to send the context of bio and profile images:
+class ProfileView(TemplateView):
+    template_name = 'accounts/profile.html'
+    
+    def get_context_data(self, **kwargs):
+        context=super().get_context_data(**kwargs)
+        user = self.request.user
+        context['username'] = user.username
+        context['email'] = user.email
+        context['name'] = user.get_full_name()
+        context['bio'] = user.userprofile.bio
+        context['profile_image'] = user.userprofile.profile_image
+        
+        context['date_joined'] = user.date_joined
+        context['last_login']= user.last_login
+        
+        return context
+
+and in template we fix it by allowing it to receive media files:
+{% extends "base.html" %}
+{% block content %}
+    <div class='mx-auto w-1/2 my-9'>
+        {% if messages %}
+            {% for message in messages %}
+                <div class="px-2 py-1 {% if message.tags == 'success' %}bg-green-500{% endif %} ">{{message}}</div>
+            {% endfor %}
+        {% endif %}
+        <form method='POST' enctype='multipart/form-data'>
+            {% csrf_token %}
+            {{ form }}
+            <button class='bg-purple-500 px-2 py-1 rounded text-white mt-3' type="submit">Update Profile</button>
+        </form>
+    </div>
+{% endblock content %}
+
+17.4,17.5 Customize user model and Fixing Previous relation error
+Now move on to 2nd method where we will add fields to our User model but as we are kind of editing it lets Call it CustomUserModel, so we undo all of our first method, and in models.py:
+class EditProfileView(UpdateView):
+    model = User
+    form_class = EditProfileForm
+    template_name = 'accounts/update_profile.html'
+    context_object_name = 'form'
+
+    def get_object(self):
+        return self.request.user
+
+    def form_valid(self, form):
+        form.save(commit=True)
+        return redirect('profile')
+
+tehn in settings.py as we are currently using our own user model we need to register it , 
+AUTH_USER_MODEL='users.CustomUser'
+
+then in forms.py
+class EditProfileForm(StyledFormMixin, forms.ModelForm):
+    class Meta:
+        model = CustomUser
+        fields = ['email', 'first_name', 'last_name', 'bio', 'profile_image']
+views.py:
+class EditProfileView(UpdateView):
+    model = CustomerUser
+    form_class = EditProfileForm
+    template_name = 'accounts/update_profile.html'
+    context_object_name = 'form'
+
+    def get_object(self):
+        return self.request.user
+
+    def form_valid(self, form):
+        form.save(commit=True)
+        return redirect('profile')
+
+now we have used User model in many places one of them was to tasks assigned to field which we will now replace with CustomUser
+assigned_to = models.ManyToManyField(settings.AUTH_USER_MODEL, related_name='tasks'), 
+also the places where User s being used a lot we can use this:
+from django.contrib.auth import get_user_model
+
+User = get_user_model()
+on the files so that it still uses our Custom User model
+
+17.6 Admin Panel customization
+Now to use our custom user model we need to reset the whole database and delete previous migrations file then migrating would ensure all things running smoothly, but in admin panel the editing user profile is not as great as for built in User model, to fix it we can customize it so in admin.py:
+
+@admin.register(CustomUser)
+class CustomUserAdmin(UserAdmin):
+    model = CustomUser
+    fieldsets = (
+        (None, {'fields': ('username', 'password')}),
+        ('Personal Info', {'fields': ('first_name',
+         'last_name', 'email', 'bio', 'profile_image')}),
+        ('Permissions', {'fields': ('is_active', 'is_staff',
+         'is_superuser', 'groups', 'user_permissions')}),
+        ('Importants Dates', {'fields': ('last_login', 'date_joined')})
+    )
+
+    add_fieldsets = (
+        (None, {
+            'classes': ('wide'),
+            'fields': ('username', 'password1', 'password2', 'email', 'bio', 'profile_image')
+        })
+    )
+
+    list_display = ('username', 'email', 'first_name', 'last_name', 'is_staff')
+    search_fields = ('username', 'email', 'first_name', 'last_name')
+    ordering = ('-username',)
+
+so each has there own functionality, one fix the actual edit page then the list view etc
