@@ -1,5 +1,5 @@
 from django.shortcuts import redirect, render, HttpResponse
-from django.contrib.auth.models import User, Group
+from django.contrib.auth.models import Group
 from django.contrib.auth.tokens import default_token_generator
 from django.contrib.auth import login,logout
 from users.forms import CustomRegisterForm, LoginForm, AssignRoleForm, CreateGroupForm, CustomPasswordChangeForm,CustomPasswordResetForm,CustomPasswordResetConfirmForm, EditProfileForm
@@ -10,10 +10,13 @@ from django.contrib.auth.views import LoginView,PasswordChangeView,PasswordChang
 from django.views.generic import TemplateView
 from django.urls import reverse_lazy
 from django.views.generic import UpdateView
-from users.models import UserProfile
+from users.models import CustomUser
+from django.contrib.auth import get_user_model
+
+User = get_user_model()
 
 # Create your views here.
-class EditProfileView(UpdateView):
+"""class EditProfileView(UpdateView):
     model = User
     form_class = EditProfileForm
     template_name = 'accounts/update_profile.html'
@@ -34,6 +37,20 @@ class EditProfileView(UpdateView):
         context['form'] = self.form_class(
             instance=self.object, userprofile=user_profile)
         return context
+
+    def form_valid(self, form):
+        form.save(commit=True)
+        return redirect('profile')
+"""
+
+class EditProfileView(UpdateView):
+    model = CustomUser
+    form_class = EditProfileForm
+    template_name = 'accounts/update_profile.html'
+    context_object_name = 'form'
+
+    def get_object(self):
+        return self.request.user
 
     def form_valid(self, form):
         form.save(commit=True)
